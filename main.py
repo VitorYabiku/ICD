@@ -1,8 +1,11 @@
-import polars.selectors as cs
 from pathlib import Path
+
+import contextily as cx
+import geopandas as gpd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import polars as pl
+import polars.selectors as cs
+import seaborn as sns
 
 
 def main():
@@ -10,8 +13,8 @@ def main():
     OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
         "ISLAND",
         "NEAR OCEAN",
-        "<1H OCEAN",
         "NEAR BAY",
+        "<1H OCEAN",
         "INLAND",
     )
     OCEAN_PROXIMITY_ENUM = pl.Enum(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING)
@@ -77,10 +80,13 @@ def main():
         sns.histplot(data=numeric_data, x=column_name, kde=True, ax=histplot_ax)
         for container in histplot_ax.containers:
             histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
+        histplot_ax.set_title(f"Histograma com gráfico de densidade de {column_name}")
 
         sns.boxplot(data=numeric_data, x=column_name, ax=boxplot_ax)
+        boxplot_ax.set_title(f"Boxplot de {column_name}")
 
         sns.ecdfplot(data=numeric_data, x=column_name, ax=ecdfplot_ax)
+        ecdfplot_ax.set_title(f"Gráfico de frequência acumulada de {column_name}")
 
         figure.savefig(
             fname=PLOT_DIRECTORY_PATH / f"{column_name}_histogram_&_boxplot_&_ecdf.png",
@@ -106,9 +112,13 @@ def main():
             countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
         counts_df = categorical_data[column_name].value_counts()
         counts = dict(counts_df.iter_rows())
+        counts_ordered = [
+            counts.get(category, 0)
+            for category in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+        ]
         # Add "0" label to categories with no observations
         for i, category in enumerate(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING):
-            if counts.get(category, 0) == 0:
+            if counts_ordered[i] == 0:
                 countplot_ax.annotate(
                     "0",
                     xy=(i, 0),
@@ -119,14 +129,78 @@ def main():
                     fontsize=16,
                     clip_on=False,
                 )
+        countplot_ax.set_title(f"Gráfico de barras de {column_name}")
 
-        # TODO: Add pie chart
+        labels_nonzero = [
+            category
+            for category, count in zip(
+                OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING, counts_ordered
+            )
+            if count > 0
+        ]
+        counts_nonzero = [count for count in counts_ordered if count > 0]
+        piechart_ax.pie(
+            counts_nonzero,
+            labels=labels_nonzero,
+            autopct=lambda pct: f"{pct:.1f}%",
+            startangle=90,
+            counterclock=False,
+            wedgeprops={"edgecolor": "white", "linewidth": 1},
+            textprops={"fontsize": 12},
+        )
+        piechart_ax.set_title(f"Gráfico de pizza de {column_name}")
+        piechart_ax.axis("equal")
 
         figure.savefig(
-            fname=PLOT_DIRECTORY_PATH / f"{column_name}_bar_chart.png",
+            fname=PLOT_DIRECTORY_PATH / f"{column_name}_bar_chart_&_pie_chart.png",
             bbox_inches="tight",
         )
         plt.close()
+
+    COLUMNS_GEOSPATIAL = ("longitude", "latitude", "ocean_proximity")
+    geospatial_data = data.select(COLUMNS_GEOSPATIAL).collect()
+    geospatial_pandas = geospatial_data.to_pandas()
+    geospatial_geodataframe = gpd.GeoDataFrame(
+        geospatial_pandas,
+        geometry=gpd.points_from_xy(
+            geospatial_pandas["longitude"], geospatial_pandas["latitude"]
+        ),
+        crs="EPSG:4326",
+    ).to_crs("EPSG:3857")
+
+    figure, geospatial_ax = plt.subplots(
+        nrows=1, ncols=1, figsize=(10, 10), layout="constrained"
+    )
+    for ocean_proximity in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING:
+        geospatial_category = geospatial_geodataframe[
+            geospatial_geodataframe["ocean_proximity"] == ocean_proximity
+        ]
+        if geospatial_category.empty:
+            continue
+        geospatial_category.plot(
+            ax=geospatial_ax,
+            markersize=18,
+            alpha=0.65,
+            label=ocean_proximity,
+        )
+
+    cx.add_basemap(
+        geospatial_ax,
+        source=cx.providers.CartoDB.PositronNoLabels,
+        attribution=False,
+    )
+    geospatial_ax.set_title("Distribuição geográfica em relação a ocean_proximity")
+    geospatial_ax.set_axis_off()
+    geospatial_ax.legend(
+        title="ocean_proximity",
+        loc="lower left",
+    )
+
+    figure.savefig(
+        fname=PLOT_DIRECTORY_PATH / "ocean_proximity_geospatial_map.png",
+        bbox_inches="tight",
+    )
+    plt.close()
 
 
 if __name__ == "__main__":

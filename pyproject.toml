@@ -5,7 +5,9 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "polars[cloudpickle,graph,numpy,pandas,plot,style]>=1.40.1",
-    "seaborn[all]>=0.13.2",
+    "contextily>=1.7.0",
+    "geopandas[all]>=1.1.3",
+    "polars[all]>=1.40.1",
+    "seaborn[stats]>=0.13.2",
     "vl-convert-python>=1.9.0.post1",
 ]
