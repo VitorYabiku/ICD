@@ -6,5 +6,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "polars[cloudpickle,graph,numpy,pandas,plot,style]>=1.40.1",
+    "seaborn[all]>=0.13.2",
     "vl-convert-python>=1.9.0.post1",
 ]

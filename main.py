@@ -1,7 +1,8 @@
-import polars.selectors as pls
+import polars.selectors as cs
 from pathlib import Path
 
-import altair as alt
+import matplotlib.pyplot as plt
+import seaborn as sns
 import polars as pl
 
 
@@ -32,7 +33,7 @@ def main():
         "Mediana": data.median(),
         "3o quartil": data.quantile(0.75),
         "Desvio Padrão": data.std(ddof=1),  # ddof=1 para obter desvio padrão amostral
-        "Amplitude": data.select(pls.numeric().max() - pls.numeric().min()),
+        "Amplitude": data.select(cs.numeric().max() - cs.numeric().min()),
     }
 
     STATS_DESCRIPTIVE_COLUMN_NAME = "Estatística"
@@ -43,33 +44,31 @@ def main():
 
         print(stat_dataframe)
 
-    value_histogram = data.collect().plot.bar(
-        x=alt.X(
-            "total_rooms:N",
-            bin=alt.Bin(step=500),
-            title="Quantidade total de quartos no bloco",
-        ),
-        y=alt.Y("count()", title="Número de blocos"),
-    )
+    PLOT_DIRECTORY_PATH = Path("plots/")
+    # Empty the directory
+    if PLOT_DIRECTORY_PATH.exists():
+        for file in PLOT_DIRECTORY_PATH.iterdir():
+            assert file.is_file()
+            file.unlink()
+    else:
+        PLOT_DIRECTORY_PATH.mkdir()
 
-    value_histogram.save("plots/histogram.png")
+    sns.set_theme()
 
-    value_kernel_density_estimator = (
-        alt.Chart(data.collect())
-        .transform_density(
-            "total_rooms",
-            as_=["total_rooms", "density"],
-        )
-        .mark_line(color="darkred")
-        .encode(
-            x="total_rooms:N",
-            y=alt.Y("density:Q", title="Densidade"),
-        )
-    )
+    COLUMNS_EXCLUDED = ["longitude", "latitude"]
+    histogram_data = data.select(cs.numeric().exclude(COLUMNS_EXCLUDED)).collect()
+    for column_name in histogram_data.columns:
+        fig, (ax1, ax2) = plt.subplots(2, 1)
+        # fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
 
-    value_kernel_density_estimator.save("plots/kernel_density_estimator.png")
+        sns.histplot(histogram_data, x=column_name, kde=True, ax=ax1)
 
-    # (value_histogram + value_kernel_density_estimator).save("plots/test.png")
+        sns.boxplot(histogram_data, x=column_name, ax=ax2)
+
+        # sns.ecdfplot(histogram_data, x=column_name, ax=ax3)
+
+        fig.savefig(PLOT_DIRECTORY_PATH / f"{column_name}_histogram_&_boxplot.png")
+        plt.close()
 
 
 if __name__ == "__main__":
