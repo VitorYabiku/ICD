@@ -1,6 +1,5 @@
 import polars.selectors as cs
 from pathlib import Path
-
 import matplotlib.pyplot as plt
 import seaborn as sns
 import polars as pl
@@ -8,7 +7,17 @@ import polars as pl
 
 def main():
     DATASET_PATH = Path("dataset/housing.csv")
-    data = pl.scan_csv(DATASET_PATH).collect()
+    OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
+        "ISLAND",
+        "NEAR OCEAN",
+        "<1H OCEAN",
+        "NEAR BAY",
+        "INLAND",
+    )
+    OCEAN_PROXIMITY_ENUM = pl.Enum(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING)
+    data = pl.scan_csv(
+        DATASET_PATH, schema_overrides={"ocean_proximity": OCEAN_PROXIMITY_ENUM}
+    ).collect()
 
     print("Formato dos dados:", data.shape)
 
@@ -55,19 +64,68 @@ def main():
 
     sns.set_theme()
 
-    COLUMNS_EXCLUDED = ["longitude", "latitude"]
-    histogram_data = data.select(cs.numeric().exclude(COLUMNS_EXCLUDED)).collect()
-    for column_name in histogram_data.columns:
-        fig, (ax1, ax2) = plt.subplots(2, 1)
-        # fig, (ax1, ax2, ax3) = plt.subplots(3, 1)
+    COLUMNS_EXCLUDED = ("longitude", "latitude")
+    numeric_data = data.select(cs.numeric().exclude(COLUMNS_EXCLUDED)).collect()
+    for column_name in numeric_data.columns:
+        figure, (histplot_ax, boxplot_ax, ecdfplot_ax) = plt.subplots(
+            nrows=3,
+            ncols=1,
+            figsize=(10, 12),
+            layout="constrained",
+        )
 
-        sns.histplot(histogram_data, x=column_name, kde=True, ax=ax1)
+        sns.histplot(data=numeric_data, x=column_name, kde=True, ax=histplot_ax)
+        for container in histplot_ax.containers:
+            histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
 
-        sns.boxplot(histogram_data, x=column_name, ax=ax2)
+        sns.boxplot(data=numeric_data, x=column_name, ax=boxplot_ax)
 
-        # sns.ecdfplot(histogram_data, x=column_name, ax=ax3)
+        sns.ecdfplot(data=numeric_data, x=column_name, ax=ecdfplot_ax)
 
-        fig.savefig(PLOT_DIRECTORY_PATH / f"{column_name}_histogram_&_boxplot.png")
+        figure.savefig(
+            fname=PLOT_DIRECTORY_PATH / f"{column_name}_histogram_&_boxplot_&_ecdf.png",
+            bbox_inches="tight",
+        )
+        plt.close()
+
+    categorical_data = data.select(
+        cs.categorical().or_(cs.enum()).exclude(COLUMNS_EXCLUDED)
+    ).collect()
+    for column_name in categorical_data.columns:
+        figure, (countplot_ax, piechart_ax) = plt.subplots(
+            nrows=2, ncols=1, figsize=(10, 12), layout="constrained"
+        )
+
+        sns.countplot(
+            data=categorical_data,
+            x=column_name,
+            ax=countplot_ax,
+            order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
+        )
+        for container in countplot_ax.containers:
+            countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
+        counts_df = categorical_data[column_name].value_counts()
+        counts = dict(counts_df.iter_rows())
+        # Add "0" label to categories with no observations
+        for i, category in enumerate(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING):
+            if counts.get(category, 0) == 0:
+                countplot_ax.annotate(
+                    "0",
+                    xy=(i, 0),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=16,
+                    clip_on=False,
+                )
+
+        # TODO: Add pie chart
+
+        figure.savefig(
+            fname=PLOT_DIRECTORY_PATH / f"{column_name}_bar_chart.png",
+            bbox_inches="tight",
+        )
         plt.close()
 
 
