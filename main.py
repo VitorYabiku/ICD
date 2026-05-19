@@ -9,6 +9,16 @@ import seaborn as sns
 
 
 def statistics_descriptive(data: pl.LazyFrame):
+    numeric_columns = cs.numeric()
+    first_quartile = numeric_columns.quantile(0.25)
+    third_quartile = numeric_columns.quantile(0.75)
+    interquartile_range = third_quartile - first_quartile
+    outliers = (numeric_columns < first_quartile - 1.5 * interquartile_range) | (
+        numeric_columns > third_quartile + 1.5 * interquartile_range
+    )
+
+    amplitude = numeric_columns.max() - numeric_columns.min()
+
     stats_descriptive = {
         "Quantidade de Observações": data.count(),
         "Quantidade de Valores Nulos": data.null_count(),
@@ -17,7 +27,11 @@ def statistics_descriptive(data: pl.LazyFrame):
         "Mediana": data.median(),
         "3o quartil": data.quantile(0.75),
         "Desvio Padrão": data.std(ddof=1),  # ddof=1 para obter desvio padrão amostral
-        "Amplitude": data.select(cs.numeric().max() - cs.numeric().min()),
+        "Amplitude": data.select(amplitude),
+        "Frequência Absoluta de Outliers": data.select(outliers.sum()),
+        "Frequência Relativa de Outliers (%)": data.select(
+            outliers.sum() * 100 / numeric_columns.count()
+        ),
     }
 
     STATS_DESCRIPTIVE_COLUMN_NAME = "Estatística"
@@ -30,6 +44,26 @@ def statistics_descriptive(data: pl.LazyFrame):
 
 
 PLOT_DIRECTORY_PATH = Path("plots/")
+
+
+def medium_income_scatterplot_bivariate(
+    data_lazyframe: pl.LazyFrame, column_other: str
+):
+    figure, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
+
+    data = data_lazyframe.collect()
+    sns.scatterplot(
+        data=data,
+        x="median_income",
+        y=column_other,
+        ax=ax,
+    )
+
+    figure.savefig(
+        fname=PLOT_DIRECTORY_PATH / f"{column_other}_&_median_income_scatterplot.png",
+        bbox_inches="tight",
+    )
+    plt.close()
 
 
 def data_numeric_plot(data_lazyframe: pl.LazyFrame):
@@ -58,6 +92,8 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
         )
         plt.close()
 
+        medium_income_scatterplot_bivariate(data_lazyframe, column_name)
+
 
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
     "ISLAND",
@@ -70,8 +106,8 @@ OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
 COLUMNS_GEOSPATIAL = ("longitude", "latitude", "ocean_proximity")
 
 
-def ocean_proximity_plot(data: pl.LazyFrame):
-    data_collect = data.collect()
+def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
+    data = data_lazyframe.collect()
 
     figure, (countplot_ax, piechart_ax) = plt.subplots(
         nrows=2, ncols=1, figsize=(10, 12), layout="constrained"
@@ -79,14 +115,14 @@ def ocean_proximity_plot(data: pl.LazyFrame):
     column_name = "ocean_proximity"
 
     sns.countplot(
-        data=data_collect,
+        data=data,
         x=column_name,
         ax=countplot_ax,
         order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
     )
     for container in countplot_ax.containers:
         countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
-    counts_df = data_collect[column_name].value_counts()
+    counts_df = data[column_name].value_counts()
     counts = dict(counts_df.iter_rows())
     counts_ordered = [
         counts.get(category, 0)
@@ -134,7 +170,7 @@ def ocean_proximity_plot(data: pl.LazyFrame):
     plt.close()
 
     # geospatial analysis - begin
-    geospatial_data = data.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
+    geospatial_data = data_lazyframe.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
     geospatial_pandas = geospatial_data.to_pandas()
     geospatial_geodataframe = gpd.GeoDataFrame(
         geospatial_pandas,
@@ -182,7 +218,7 @@ def ocean_proximity_plot(data: pl.LazyFrame):
     figure, boxplot_ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
 
     sns.boxplot(
-        data=data_collect,
+        data=data,
         x="ocean_proximity",
         y="median_income",
         order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
@@ -195,6 +231,7 @@ def ocean_proximity_plot(data: pl.LazyFrame):
         fname=PLOT_DIRECTORY_PATH / "median_income_by_ocean_proximity_boxplot.png",
         bbox_inches="tight",
     )
+    plt.close()
 
 
 def main():
@@ -236,7 +273,7 @@ def main():
 
     OCEAN_PROXIMITY_COLUMNS_ADDITIONAL = "median_income"
     ocean_proximity_data = data.select(
-        pl.col(COLUMNS_GEOSPATIAL), pl.col(OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
+        pl.col(*COLUMNS_GEOSPATIAL, OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
     )
     ocean_proximity_plot(ocean_proximity_data)
 
@@ -251,6 +288,9 @@ def main():
         pl.col(LOG_TRANSFORM_COLUMNS).log().name.suffix("_logaritmo_natural")
     )
     data_numeric_plot(data_transformed_log)
+
+    # TODO: Pearon correlation matrix of all numeric non-geospatial variables indicating the
+    # value of each square with the value text, rather than just color tonality
 
 
 if __name__ == "__main__":
