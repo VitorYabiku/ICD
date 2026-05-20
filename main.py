@@ -3,12 +3,16 @@ from pathlib import Path
 import contextily as cx
 import geopandas as gpd
 import matplotlib.pyplot as plt
+import numpy as np
 import polars as pl
 import polars.selectors as cs
 import seaborn as sns
 
 
-def statistics_descriptive(data: pl.LazyFrame):
+TABLE_DIRECTORY_PATH = Path("tables/")
+
+
+def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
     numeric_columns = cs.numeric()
     first_quartile = numeric_columns.quantile(0.25)
     third_quartile = numeric_columns.quantile(0.75)
@@ -20,33 +24,47 @@ def statistics_descriptive(data: pl.LazyFrame):
     amplitude = numeric_columns.max() - numeric_columns.min()
 
     stats_descriptive = {
-        "Quantidade de Observações": data.count(),
-        "Quantidade de Valores Nulos": data.null_count(),
-        "Média Aritmética": data.mean(),
-        "1o quartil": data.quantile(0.25),
-        "Mediana": data.median(),
-        "3o quartil": data.quantile(0.75),
-        "Desvio Padrão": data.std(ddof=1),  # ddof=1 para obter desvio padrão amostral
-        "Amplitude": data.select(amplitude),
-        "Frequência Absoluta de Outliers": data.select(outliers.sum()),
-        "Frequência Relativa de Outliers (%)": data.select(
+        "Quantidade de Observações": data_lazyframe.count(),
+        "Quantidade de Valores Nulos": data_lazyframe.null_count(),
+        "Média Aritmética": data_lazyframe.mean(),
+        "1o quartil": data_lazyframe.quantile(0.25),
+        "Mediana": data_lazyframe.median(),
+        "3o quartil": data_lazyframe.quantile(0.75),
+        "Desvio Padrão": data_lazyframe.std(
+            ddof=1
+        ),  # ddof=1 para obter desvio padrão amostral
+        "Amplitude": data_lazyframe.select(amplitude),
+        "Frequência Absoluta de Outliers": data_lazyframe.select(outliers.sum()),
+        "Frequência Relativa de Outliers (%)": data_lazyframe.select(
             outliers.sum() * 100 / numeric_columns.count()
         ),
     }
 
     STATS_DESCRIPTIVE_COLUMN_NAME = "Estatística"
     for stat_name, stat_lazyframe in stats_descriptive.items():
-        stat_dataframe = stat_lazyframe.with_columns(
+        stat_lazyframe.with_columns(
             pl.lit(stat_name).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
-        ).collect()
+        ).collect().write_json(
+            TABLE_DIRECTORY_PATH
+            / f"{filename_prefix}estatisticas_descritivas_{stat_name}.json"
+        )
 
-        print(stat_dataframe)
+    data_lazyframe.filter(
+        pl.any_horizontal(pl.all().is_null()) | pl.any_horizontal(cs.float().is_nan())
+    ).with_columns(
+        pl.lit(
+            "Observações com algum valor nulo ou número de ponto flutuante NaN"
+        ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
+    ).collect().write_json(
+        TABLE_DIRECTORY_PATH
+        / f"{filename_prefix}observacoes_com_algum_valor_null_ou_nan.json"
+    )
 
 
 PLOT_DIRECTORY_PATH = Path("plots/")
 
 
-def medium_income_scatterplot_bivariate(
+def median_income_scatterplot_bivariate(
     data_lazyframe: pl.LazyFrame, column_other: str
 ):
     figure, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
@@ -60,7 +78,8 @@ def medium_income_scatterplot_bivariate(
     )
 
     figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / f"{column_other}_&_median_income_scatterplot.png",
+        fname=PLOT_DIRECTORY_PATH
+        / f"{column_other}_&_median_income_grafico_de_espalhamento.png",
         bbox_inches="tight",
     )
     plt.close()
@@ -78,21 +97,52 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
         )
         for container in histplot_ax.containers:
             histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
-        histplot_ax.set_title(f"Histograma com gráfico de densidade de {column_name}")
+        histplot_ax.set_title(t"Histograma com gráfico de densidade de {column_name}")
 
         sns.boxplot(data=data, x=column_name, ax=boxplot_ax)
-        boxplot_ax.set_title(f"Boxplot de {column_name}")
+        boxplot_ax.set_title(t"Boxplot de {column_name}")
 
         sns.ecdfplot(data=data, x=column_name, ax=ecdfplot_ax)
-        ecdfplot_ax.set_title(f"Gráfico de frequência acumulada de {column_name}")
+        ecdfplot_ax.set_title(t"Gráfico de frequência acumulada de {column_name}")
 
         figure.savefig(
-            fname=PLOT_DIRECTORY_PATH / f"{column_name}_histogram_&_boxplot_&_ecdf.png",
+            fname=PLOT_DIRECTORY_PATH
+            / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",
             bbox_inches="tight",
         )
         plt.close()
 
-        medium_income_scatterplot_bivariate(data_lazyframe, column_name)
+
+def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
+    data = data_lazyframe.drop_nulls().collect()
+    correlation = data.corr()
+    mask = np.triu(np.ones_like(correlation, dtype=bool))
+
+    figure, correlation_ax = plt.subplots(
+        nrows=1, ncols=1, figsize=(10, 12), layout="constrained"
+    )
+    sns.heatmap(
+        correlation.to_numpy(),
+        mask=mask,
+        annot=True,
+        fmt=".2f",
+        cmap="coolwarm",
+        vmin=-1,
+        vmax=1,
+        square=True,
+        xticklabels=correlation.columns,
+        yticklabels=correlation.columns,
+        ax=correlation_ax,
+    )
+    correlation_ax.set_title(
+        "Matriz de correlação de Pearson das variáveis quantitativas"
+    )
+
+    figure.savefig(
+        fname=PLOT_DIRECTORY_PATH / "matrix_de_correlacao_de_pearson.png",
+        bbox_inches="tight",
+    )
+    plt.close()
 
 
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
@@ -141,7 +191,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
                 fontsize=16,
                 clip_on=False,
             )
-    countplot_ax.set_title(f"Gráfico de barras de {column_name}")
+    countplot_ax.set_title(t"Gráfico de barras de {column_name}")
 
     labels_nonzero = [
         category
@@ -154,17 +204,18 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     piechart_ax.pie(
         counts_nonzero,
         labels=labels_nonzero,
-        autopct=lambda pct: f"{pct:.1f}%",
+        autopct=lambda pct: t"{pct:.1f}%",
         startangle=90,
         counterclock=False,
         wedgeprops={"edgecolor": "white", "linewidth": 1},
         textprops={"fontsize": 12},
     )
-    piechart_ax.set_title(f"Gráfico de pizza de {column_name}")
+    piechart_ax.set_title(t"Gráfico de pizza de {column_name}")
     piechart_ax.axis("equal")
 
     figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / f"{column_name}_bar_chart_&_pie_chart.png",
+        fname=PLOT_DIRECTORY_PATH
+        / f"{column_name}_grafico_de_barras_&_grafico_de_pizz.png",
         bbox_inches="tight",
     )
     plt.close()
@@ -209,7 +260,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     )
 
     figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / "ocean_proximity_geospatial_map.png",
+        fname=PLOT_DIRECTORY_PATH / "ocean_proximity_mapa_geoespacial.png",
         bbox_inches="tight",
     )
     plt.close()
@@ -228,10 +279,16 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     boxplot_ax.set_title("Boxplot de median_income por ocean_proximity")
 
     figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / "median_income_by_ocean_proximity_boxplot.png",
+        fname=PLOT_DIRECTORY_PATH / "median_income_por_ocean_proximity_boxplot.png",
         bbox_inches="tight",
     )
     plt.close()
+
+
+def median_income_scatterplots(data_lazyframe: pl.LazyFrame):
+    for column_name in data_lazyframe.collect_schema().names():
+        if column_name != "median_income":
+            median_income_scatterplot_bivariate(data_lazyframe, column_name)
 
 
 def main():
@@ -256,9 +313,17 @@ def main():
 
     data = data.lazy()
 
-    statistics_descriptive(data)
+    # Empty the table directory
+    if TABLE_DIRECTORY_PATH.exists():
+        for file in TABLE_DIRECTORY_PATH.iterdir():
+            assert file.is_file()
+            file.unlink()
+    else:
+        TABLE_DIRECTORY_PATH.mkdir()
 
-    # Empty the directory
+    statistics_descriptive(data, "")
+
+    # Empty the plot directory
     if PLOT_DIRECTORY_PATH.exists():
         for file in PLOT_DIRECTORY_PATH.iterdir():
             assert file.is_file()
@@ -270,6 +335,8 @@ def main():
 
     data_numeric = data.select(cs.numeric().exclude(COLUMNS_GEOSPATIAL))
     data_numeric_plot(data_numeric)
+    median_income_scatterplots(data_numeric)
+    correlation_matrix_plot(data_numeric)
 
     OCEAN_PROXIMITY_COLUMNS_ADDITIONAL = "median_income"
     ocean_proximity_data = data.select(
@@ -285,12 +352,21 @@ def main():
         "total_bedrooms",
     )
     data_transformed_log = data.select(
-        pl.col(LOG_TRANSFORM_COLUMNS).log().name.suffix("_logaritmo_natural")
+        pl.col(LOG_TRANSFORM_COLUMNS).log().name.suffix("_logaritmo_natural"),
+        pl.col("median_income"),
     )
     data_numeric_plot(data_transformed_log)
 
-    # TODO: Pearon correlation matrix of all numeric non-geospatial variables indicating the
-    # value of each square with the value text, rather than just color tonality
+    data = data.select(
+        (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
+        (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrroms_per_room"),
+        (pl.col("population") / pl.col("households")).alias("populaton_per_household"),
+        pl.col("median_income"),
+    )
+
+    statistics_descriptive(data, "dados_transformados_")
+    data_numeric_plot(data)
+    median_income_scatterplots(data)
 
 
 if __name__ == "__main__":
