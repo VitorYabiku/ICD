@@ -70,6 +70,9 @@ def median_income_scatterplot_bivariate(
     figure, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
 
     data = data_lazyframe.collect()
+    print("EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe...")
+    print(data.head(1))
+
     sns.scatterplot(
         data=data,
         x="median_income",
@@ -84,9 +87,14 @@ def median_income_scatterplot_bivariate(
     )
     plt.close()
 
+    print("median_income_scatterplot_bivariate executado com SUCESSO", 2 * "\n")
+
 
 def data_numeric_plot(data_lazyframe: pl.LazyFrame):
     data = data_lazyframe.collect()
+    print("EXECUTANDO data_numeric_plot com o seguinte dataframe...")
+    print(data.head(1))
+
     for column_name in data.columns:
         figure, (histplot_ax, boxplot_ax, ecdfplot_ax) = plt.subplots(
             nrows=3, ncols=1, figsize=(10, 12), layout="constrained"
@@ -112,9 +120,14 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
         )
         plt.close()
 
+    print("data_numeric_plot executado com SUCESSO", 2 * "\n")
+
 
 def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
     data = data_lazyframe.drop_nulls().collect()
+    print("EXECUTANDO correlation_matrix_plot com o seguinte dataframe...")
+    print(data.head(1))
+
     correlation = data.corr()
     mask = np.triu(np.ones_like(correlation, dtype=bool))
 
@@ -144,6 +157,8 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
     )
     plt.close()
 
+    print("correlation_matrix_plot executado com SUCESSO", 2 * "\n")
+
 
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
     "ISLAND",
@@ -158,6 +173,8 @@ COLUMNS_GEOSPATIAL = ("longitude", "latitude", "ocean_proximity")
 
 def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     data = data_lazyframe.collect()
+    print("EXECUTANDO ocean_proximity_plot com o seguinte dataframe...")
+    print(data.head(1))
 
     figure, (countplot_ax, piechart_ax) = plt.subplots(
         nrows=2, ncols=1, figsize=(10, 12), layout="constrained"
@@ -284,6 +301,8 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     )
     plt.close()
 
+    print("ocean_proximity_plot executado com SUCESSO", 2 * "\n")
+
 
 def median_income_scatterplots(data_lazyframe: pl.LazyFrame):
     for column_name in data_lazyframe.collect_schema().names():
@@ -299,6 +318,7 @@ def main():
     ).collect()
 
     print("Formato dos dados:", data.shape)
+    print(data.head())
 
     DATASET_SAMPLE_LENGTH = 2000
     DATASET_SAMPLE_SEED = 42
@@ -310,26 +330,31 @@ def main():
     )
 
     print("Formato da amostra:", data.shape)
+    print(data.head())
 
     data = data.lazy()
 
     # Empty the table directory
+    print(f"Resetando diretório de tabelas ({TABLE_DIRECTORY_PATH})")
     if TABLE_DIRECTORY_PATH.exists():
         for file in TABLE_DIRECTORY_PATH.iterdir():
             assert file.is_file()
             file.unlink()
     else:
         TABLE_DIRECTORY_PATH.mkdir()
+    print("Diretório de tabelas resetado com SUCESSO", 2 * "\n")
 
     statistics_descriptive(data, "")
 
     # Empty the plot directory
+    print(f"Resetando diretório de gráficos ({PLOT_DIRECTORY_PATH})")
     if PLOT_DIRECTORY_PATH.exists():
         for file in PLOT_DIRECTORY_PATH.iterdir():
             assert file.is_file()
             file.unlink()
     else:
         PLOT_DIRECTORY_PATH.mkdir()
+    print("Diretório de gráficos resetado com SUCESSO", 2 * "\n")
 
     sns.set_theme()
 
