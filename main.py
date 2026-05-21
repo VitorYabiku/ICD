@@ -77,7 +77,7 @@ def subplots(*args, savefig_path: Path, **kwargs):
     except Exception:
         raise
     else:
-        figure.savefig(fname=savefig_path, bbox_inches="tight")
+        figure.savefig(fname=savefig_path, bbox_inches="tight", dpi=300)
     finally:
         plt.close(figure)
 
@@ -124,7 +124,6 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
             savefig_path=PLOT_DIRECTORY_PATH
             / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",
         ) as (histplot_ax, boxplot_ax, ecdfplot_ax):
-
             sns.histplot(
                 data=data, x=column_name, kde=True, kde_kws={"cut": 0}, ax=histplot_ax
             )
@@ -304,9 +303,9 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         nrows=1,
         ncols=1,
         figsize=(10, 12),
-        savefig_path=PLOT_DIRECTORY_PATH / "median_income_por_ocean_proximity_boxplot.png",
+        savefig_path=PLOT_DIRECTORY_PATH
+        / "median_income_por_ocean_proximity_boxplot.png",
     ) as boxplot_ax:
-
         sns.boxplot(
             data=data,
             x="ocean_proximity",
@@ -340,7 +339,7 @@ def main():
     ).collect()
 
     logger.info("Formato dos dados: %s", data.shape)
-    logger.info("%s", data.head())
+    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
     DATASET_SAMPLE_LENGTH = 2000
     DATASET_SAMPLE_SEED = 42
@@ -352,7 +351,7 @@ def main():
     )
 
     logger.info("Formato da amostra: %s", data.shape)
-    logger.info("%s", data.head())
+    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
     data = data.lazy()
 
@@ -364,7 +363,9 @@ def main():
             file.unlink()
     else:
         TABLE_DIRECTORY_PATH.mkdir()
-    logger.info("Diretório de tabelas resetado com SUCESSO")
+    logger.info(
+        f"Diretório de tabelas resetado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+    )
 
     statistics_descriptive(data, "")
 
@@ -376,7 +377,9 @@ def main():
             file.unlink()
     else:
         PLOT_DIRECTORY_PATH.mkdir()
-    logger.info("Diretório de gráficos resetado com SUCESSO")
+    logger.info(
+        f"Diretório de gráficos resetado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+    )
 
     sns.set_theme()
 
