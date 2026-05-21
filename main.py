@@ -91,7 +91,7 @@ def median_income_scatterplot_bivariate(
         / f"{column_other}_&_median_income_grafico_de_espalhamento.png",
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(figure)
 
     logger.info(
         f"median_income_scatterplot_bivariate executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -126,7 +126,7 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
             / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",
             bbox_inches="tight",
         )
-        plt.close()
+        plt.close(figure)
 
     logger.info(
         f"data_numeric_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -165,7 +165,7 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
         fname=PLOT_DIRECTORY_PATH / "matrix_de_correlacao_de_pearson.png",
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(figure)
 
     logger.info(
         f"correlation_matrix_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -247,7 +247,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         / f"{column_name}_grafico_de_barras_&_grafico_de_pizz.png",
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(figure)
 
     # geospatial analysis - begin
     geospatial_data = data_lazyframe.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
@@ -292,7 +292,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         fname=PLOT_DIRECTORY_PATH / "ocean_proximity_mapa_geoespacial.png",
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(figure)
     # geospatial analysis - end
 
     figure, boxplot_ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
@@ -311,7 +311,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         fname=PLOT_DIRECTORY_PATH / "median_income_por_ocean_proximity_boxplot.png",
         bbox_inches="tight",
     )
-    plt.close()
+    plt.close(figure)
 
     logger.info(
         f"ocean_proximity_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -325,7 +325,9 @@ def median_income_scatterplots(data_lazyframe: pl.LazyFrame):
 
 
 def main():
-    logging.basicConfig(level=logging.INFO, format="%(levelname)s:%(name)s:%(message)s")
+    logging.basicConfig(
+        level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
+    )
 
     DATASET_PATH = Path("dataset/housing.csv")
     OCEAN_PROXIMITY_ENUM = pl.Enum(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING)
