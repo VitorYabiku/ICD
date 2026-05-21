@@ -32,9 +32,9 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
         "Quantidade de Observações": data_lazyframe.count(),
         "Quantidade de Valores Nulos": data_lazyframe.null_count(),
         "Média Aritmética": data_lazyframe.mean(),
-        "1o quartil": data_lazyframe.quantile(0.25),
+        "1º quartil": data_lazyframe.quantile(0.25),
         "Mediana": data_lazyframe.median(),
-        "3o quartil": data_lazyframe.quantile(0.75),
+        "3º quartil": data_lazyframe.quantile(0.75),
         "Desvio Padrão": data_lazyframe.std(
             ddof=1
         ),  # ddof=1 para obter desvio padrão amostral
@@ -62,7 +62,7 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
         ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
     ).collect().write_json(
         TABLE_DIRECTORY_PATH
-        / f"{filename_prefix}observacoes_com_algum_valor_null_ou_nan.json"
+        / f"{filename_prefix}observacoes_com_algum_nan_ou_valor_nulo.json"
     )
 
 
@@ -157,7 +157,7 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
         ncols=1,
         figsize=(10, 12),
         layout="constrained",
-        savefig_path=PLOT_DIRECTORY_PATH / "matrix_de_correlacao_de_pearson.png",
+        savefig_path=PLOT_DIRECTORY_PATH / "matriz_de_correlacao_de_pearson.png",
     ) as correlation_ax:
         sns.heatmap(
             correlation.to_numpy(),
@@ -181,15 +181,15 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
     )
 
 
-OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = (
+OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = [
     "ISLAND",
     "NEAR OCEAN",
     "NEAR BAY",
     "<1H OCEAN",
     "INLAND",
-)
+]
 
-COLUMNS_GEOSPATIAL = ("longitude", "latitude", "ocean_proximity")
+COLUMNS_GEOSPATIAL = ["longitude", "latitude", "ocean_proximity"]
 
 
 def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
@@ -204,7 +204,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         figsize=(10, 12),
         layout="constrained",
         savefig_path=PLOT_DIRECTORY_PATH
-        / f"{column_name}_grafico_de_barras_&_grafico_de_pizz.png",
+        / f"{column_name}_grafico_de_barras_&_grafico_de_pizza.png",
     ) as (countplot_ax, piechart_ax):
         sns.countplot(
             data=data,
@@ -255,7 +255,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         piechart_ax.set_title(f"Gráfico de pizza de {column_name}")
         piechart_ax.axis("equal")
 
-    # geospatial analysis - begin
+    # Geospatial analysis - begin
     geospatial_data = data_lazyframe.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
     geospatial_pandas = geospatial_data.to_pandas()
     geospatial_geodataframe = gpd.GeoDataFrame(
@@ -297,7 +297,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
             title="ocean_proximity",
             loc="lower left",
         )
-    # geospatial analysis - end
+    # Geospatial analysis - end
 
     with subplots(
         nrows=1,
@@ -388,33 +388,32 @@ def main():
     median_income_scatterplots(data_numeric)
     correlation_matrix_plot(data_numeric)
 
-    OCEAN_PROXIMITY_COLUMNS_ADDITIONAL = "median_income"
+    OCEAN_PROXIMITY_COLUMNS_ADDITIONAL = ["median_income"]
     ocean_proximity_data = data.select(
-        pl.col(*COLUMNS_GEOSPATIAL, OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
+        pl.col(*COLUMNS_GEOSPATIAL, *OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
     )
     ocean_proximity_plot(ocean_proximity_data)
 
-    LOG_TRANSFORM_COLUMNS = (
+    LOG_TRANSFORM_COLUMNS = [
         "households",
         "median_income",
         "population",
         "total_rooms",
         "total_bedrooms",
-    )
+    ]
     data_transformed_log = data.select(
         pl.col(LOG_TRANSFORM_COLUMNS).log().name.suffix("_logaritmo_natural"),
         pl.col("median_income"),
     )
     data_numeric_plot(data_transformed_log)
 
-    DATA_WITH_VARIABLES_NEW_COLUMNS = (
+    DATA_WITH_VARIABLES_NEW_COLUMNS = [
         "total_rooms",
         "households",
         "total_bedrooms",
-        "total_rooms",
         "population",
         "median_income",
-    )
+    ]
     data_with_variables_new = data.select(
         (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
         (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrooms_per_room"),
@@ -431,7 +430,7 @@ def main():
 
     # Extra analysis - begin
 
-    # population_per_household outlier analysis
+    # Análise de outliers de population_per_household
     data_with_variables_new.sort(
         pl.col("population_per_household"), descending=True, nulls_last=True
     ).head(20).collect().write_json(
