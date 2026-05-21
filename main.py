@@ -130,14 +130,14 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
             for container in histplot_ax.containers:
                 histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
             histplot_ax.set_title(
-                t"Histograma com gráfico de densidade de {column_name}"
+                f"Histograma com gráfico de densidade de {column_name}"
             )
 
             sns.boxplot(data=data, x=column_name, ax=boxplot_ax)
-            boxplot_ax.set_title(t"Boxplot de {column_name}")
+            boxplot_ax.set_title(f"Boxplot de {column_name}")
 
             sns.ecdfplot(data=data, x=column_name, ax=ecdfplot_ax)
-            ecdfplot_ax.set_title(t"Gráfico de frequência acumulada de {column_name}")
+            ecdfplot_ax.set_title(f"Gráfico de frequência acumulada de {column_name}")
 
     logger.info(
         f"data_numeric_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -233,7 +233,7 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
                     fontsize=16,
                     clip_on=False,
                 )
-        countplot_ax.set_title(t"Gráfico de barras de {column_name}")
+        countplot_ax.set_title(f"Gráfico de barras de {column_name}")
 
         labels_nonzero = [
             category
@@ -246,13 +246,13 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         piechart_ax.pie(
             counts_nonzero,
             labels=labels_nonzero,
-            autopct=lambda pct: t"{pct:.1f}%",
+            autopct=lambda pct: f"{pct:.1f}%",
             startangle=90,
             counterclock=False,
             wedgeprops={"edgecolor": "white", "linewidth": 1},
             textprops={"fontsize": 12},
         )
-        piechart_ax.set_title(t"Gráfico de pizza de {column_name}")
+        piechart_ax.set_title(f"Gráfico de pizza de {column_name}")
         piechart_ax.axis("equal")
 
     # geospatial analysis - begin
@@ -407,16 +407,37 @@ def main():
     )
     data_numeric_plot(data_transformed_log)
 
-    data = data.select(
+    DATA_WITH_VARIABLES_NEW_COLUMNS = (
+        "total_rooms",
+        "households",
+        "total_bedrooms",
+        "total_rooms",
+        "population",
+        "median_income",
+    )
+    data_with_variables_new = data.select(
         (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
-        (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrroms_per_room"),
-        (pl.col("population") / pl.col("households")).alias("populaton_per_household"),
-        pl.col("median_income"),
+        (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrooms_per_room"),
+        (pl.col("population") / pl.col("households")).alias("population_per_household"),
+        pl.col(*DATA_WITH_VARIABLES_NEW_COLUMNS),
     )
 
-    statistics_descriptive(data, "dados_transformados_")
-    data_numeric_plot(data)
-    median_income_scatterplots(data)
+    statistics_descriptive(
+        data_with_variables_new, filename_prefix="dados_transformados_"
+    )
+    data_numeric_plot(data_with_variables_new)
+    median_income_scatterplots(data_with_variables_new)
+    correlation_matrix_plot(data_with_variables_new)
+
+    # Extra analysis - begin
+
+    # population_per_household outlier analysis
+    data_with_variables_new.sort(
+        pl.col("population_per_household"), descending=True, nulls_last=True
+    ).head(20).collect().write_json(
+        TABLE_DIRECTORY_PATH / "population_per_household_outliers.json"
+    )
+    # Extra analysis - end
 
 
 if __name__ == "__main__":
