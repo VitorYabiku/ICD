@@ -1,4 +1,5 @@
 import logging
+from contextlib import contextmanager
 from pathlib import Path
 
 import contextily as cx
@@ -68,30 +69,41 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
 PLOT_DIRECTORY_PATH = Path("plots/")
 
 
+@contextmanager
+def subplots(*args, savefig_path: Path, **kwargs):
+    figure, axes = plt.subplots(*args, **kwargs)
+    try:
+        yield axes
+    except Exception:
+        raise
+    else:
+        figure.savefig(fname=savefig_path, bbox_inches="tight")
+    finally:
+        plt.close(figure)
+
+
 def median_income_scatterplot_bivariate(
     data_lazyframe: pl.LazyFrame, column_other: str
 ):
-    figure, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
-
     data = data_lazyframe.collect()
     logger.info(
         "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe..."
     )
     logger.info("%s", data.head(1))
 
-    sns.scatterplot(
-        data=data,
-        x="median_income",
-        y=column_other,
-        ax=ax,
-    )
-
-    figure.savefig(
-        fname=PLOT_DIRECTORY_PATH
+    with subplots(
+        nrows=1,
+        ncols=1,
+        figsize=(10, 12),
+        savefig_path=PLOT_DIRECTORY_PATH
         / f"{column_other}_&_median_income_grafico_de_espalhamento.png",
-        bbox_inches="tight",
-    )
-    plt.close(figure)
+    ) as ax:
+        sns.scatterplot(
+            data=data,
+            x="median_income",
+            y=column_other,
+            ax=ax,
+        )
 
     logger.info(
         f"median_income_scatterplot_bivariate executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -104,29 +116,29 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
     logger.info("%s", data.head(1))
 
     for column_name in data.columns:
-        figure, (histplot_ax, boxplot_ax, ecdfplot_ax) = plt.subplots(
-            nrows=3, ncols=1, figsize=(10, 12), layout="constrained"
-        )
-
-        sns.histplot(
-            data=data, x=column_name, kde=True, kde_kws={"cut": 0}, ax=histplot_ax
-        )
-        for container in histplot_ax.containers:
-            histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
-        histplot_ax.set_title(t"Histograma com gráfico de densidade de {column_name}")
-
-        sns.boxplot(data=data, x=column_name, ax=boxplot_ax)
-        boxplot_ax.set_title(t"Boxplot de {column_name}")
-
-        sns.ecdfplot(data=data, x=column_name, ax=ecdfplot_ax)
-        ecdfplot_ax.set_title(t"Gráfico de frequência acumulada de {column_name}")
-
-        figure.savefig(
-            fname=PLOT_DIRECTORY_PATH
+        with subplots(
+            nrows=3,
+            ncols=1,
+            figsize=(10, 12),
+            layout="constrained",
+            savefig_path=PLOT_DIRECTORY_PATH
             / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",
-            bbox_inches="tight",
-        )
-        plt.close(figure)
+        ) as (histplot_ax, boxplot_ax, ecdfplot_ax):
+
+            sns.histplot(
+                data=data, x=column_name, kde=True, kde_kws={"cut": 0}, ax=histplot_ax
+            )
+            for container in histplot_ax.containers:
+                histplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
+            histplot_ax.set_title(
+                t"Histograma com gráfico de densidade de {column_name}"
+            )
+
+            sns.boxplot(data=data, x=column_name, ax=boxplot_ax)
+            boxplot_ax.set_title(t"Boxplot de {column_name}")
+
+            sns.ecdfplot(data=data, x=column_name, ax=ecdfplot_ax)
+            ecdfplot_ax.set_title(t"Gráfico de frequência acumulada de {column_name}")
 
     logger.info(
         f"data_numeric_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -141,31 +153,29 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
     correlation = data.corr()
     mask = np.triu(np.ones_like(correlation, dtype=bool))
 
-    figure, correlation_ax = plt.subplots(
-        nrows=1, ncols=1, figsize=(10, 12), layout="constrained"
-    )
-    sns.heatmap(
-        correlation.to_numpy(),
-        mask=mask,
-        annot=True,
-        fmt=".2f",
-        cmap="coolwarm",
-        vmin=-1,
-        vmax=1,
-        square=True,
-        xticklabels=correlation.columns,
-        yticklabels=correlation.columns,
-        ax=correlation_ax,
-    )
-    correlation_ax.set_title(
-        "Matriz de correlação de Pearson das variáveis quantitativas"
-    )
-
-    figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / "matrix_de_correlacao_de_pearson.png",
-        bbox_inches="tight",
-    )
-    plt.close(figure)
+    with subplots(
+        nrows=1,
+        ncols=1,
+        figsize=(10, 12),
+        layout="constrained",
+        savefig_path=PLOT_DIRECTORY_PATH / "matrix_de_correlacao_de_pearson.png",
+    ) as correlation_ax:
+        sns.heatmap(
+            correlation.to_numpy(),
+            mask=mask,
+            annot=True,
+            fmt=".2f",
+            cmap="coolwarm",
+            vmin=-1,
+            vmax=1,
+            square=True,
+            xticklabels=correlation.columns,
+            yticklabels=correlation.columns,
+            ax=correlation_ax,
+        )
+        correlation_ax.set_title(
+            "Matriz de correlação de Pearson das variáveis quantitativas"
+        )
 
     logger.info(
         f"correlation_matrix_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -188,66 +198,63 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     logger.info("EXECUTANDO ocean_proximity_plot com o seguinte dataframe...")
     logger.info("%s", data.head(1))
 
-    figure, (countplot_ax, piechart_ax) = plt.subplots(
-        nrows=2, ncols=1, figsize=(10, 12), layout="constrained"
-    )
     column_name = "ocean_proximity"
-
-    sns.countplot(
-        data=data,
-        x=column_name,
-        ax=countplot_ax,
-        order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
-    )
-    for container in countplot_ax.containers:
-        countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
-    counts_df = data[column_name].value_counts()
-    counts = dict(counts_df.iter_rows())
-    counts_ordered = [
-        counts.get(category, 0)
-        for category in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
-    ]
-    # Add "0" label to categories with no observations
-    for i, category in enumerate(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING):
-        if counts_ordered[i] == 0:
-            countplot_ax.annotate(
-                "0",
-                xy=(i, 0),
-                xytext=(0, 3),
-                textcoords="offset points",
-                ha="center",
-                va="bottom",
-                fontsize=16,
-                clip_on=False,
-            )
-    countplot_ax.set_title(t"Gráfico de barras de {column_name}")
-
-    labels_nonzero = [
-        category
-        for category, count in zip(
-            OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING, counts_ordered
-        )
-        if count > 0
-    ]
-    counts_nonzero = [count for count in counts_ordered if count > 0]
-    piechart_ax.pie(
-        counts_nonzero,
-        labels=labels_nonzero,
-        autopct=lambda pct: t"{pct:.1f}%",
-        startangle=90,
-        counterclock=False,
-        wedgeprops={"edgecolor": "white", "linewidth": 1},
-        textprops={"fontsize": 12},
-    )
-    piechart_ax.set_title(t"Gráfico de pizza de {column_name}")
-    piechart_ax.axis("equal")
-
-    figure.savefig(
-        fname=PLOT_DIRECTORY_PATH
+    with subplots(
+        nrows=2,
+        ncols=1,
+        figsize=(10, 12),
+        layout="constrained",
+        savefig_path=PLOT_DIRECTORY_PATH
         / f"{column_name}_grafico_de_barras_&_grafico_de_pizz.png",
-        bbox_inches="tight",
-    )
-    plt.close(figure)
+    ) as (countplot_ax, piechart_ax):
+        sns.countplot(
+            data=data,
+            x=column_name,
+            ax=countplot_ax,
+            order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
+        )
+        for container in countplot_ax.containers:
+            countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
+        counts_df = data[column_name].value_counts()
+        counts = dict(counts_df.iter_rows())
+        counts_ordered = [
+            counts.get(category, 0)
+            for category in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+        ]
+        # Add "0" label to categories with no observations
+        for i, category in enumerate(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING):
+            if counts_ordered[i] == 0:
+                countplot_ax.annotate(
+                    "0",
+                    xy=(i, 0),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=16,
+                    clip_on=False,
+                )
+        countplot_ax.set_title(t"Gráfico de barras de {column_name}")
+
+        labels_nonzero = [
+            category
+            for category, count in zip(
+                OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING, counts_ordered
+            )
+            if count > 0
+        ]
+        counts_nonzero = [count for count in counts_ordered if count > 0]
+        piechart_ax.pie(
+            counts_nonzero,
+            labels=labels_nonzero,
+            autopct=lambda pct: t"{pct:.1f}%",
+            startangle=90,
+            counterclock=False,
+            wedgeprops={"edgecolor": "white", "linewidth": 1},
+            textprops={"fontsize": 12},
+        )
+        piechart_ax.set_title(t"Gráfico de pizza de {column_name}")
+        piechart_ax.axis("equal")
 
     # geospatial analysis - begin
     geospatial_data = data_lazyframe.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
@@ -260,58 +267,55 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         crs="EPSG:4326",
     ).to_crs("EPSG:3857")
 
-    figure, geospatial_ax = plt.subplots(
-        nrows=1, ncols=1, figsize=(10, 12), layout="constrained"
-    )
-    for ocean_proximity in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING:
-        geospatial_category = geospatial_geodataframe[
-            geospatial_geodataframe["ocean_proximity"] == ocean_proximity
-        ]
-        if geospatial_category.empty:
-            continue
-        geospatial_category.plot(
-            ax=geospatial_ax,
-            markersize=18,
-            alpha=0.65,
-            label=ocean_proximity,
+    with subplots(
+        nrows=1,
+        ncols=1,
+        figsize=(10, 12),
+        layout="constrained",
+        savefig_path=PLOT_DIRECTORY_PATH / "ocean_proximity_mapa_geoespacial.png",
+    ) as geospatial_ax:
+        for ocean_proximity in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING:
+            geospatial_category = geospatial_geodataframe[
+                geospatial_geodataframe["ocean_proximity"] == ocean_proximity
+            ]
+            if geospatial_category.empty:
+                continue
+            geospatial_category.plot(
+                ax=geospatial_ax,
+                markersize=18,
+                alpha=0.65,
+                label=ocean_proximity,
+            )
+
+        cx.add_basemap(
+            geospatial_ax,
+            source=cx.providers.CartoDB.PositronNoLabels,
+            attribution=False,
         )
-
-    cx.add_basemap(
-        geospatial_ax,
-        source=cx.providers.CartoDB.PositronNoLabels,
-        attribution=False,
-    )
-    geospatial_ax.set_title("Distribuição geoespacial em relação a ocean_proximity")
-    geospatial_ax.set_axis_off()
-    geospatial_ax.legend(
-        title="ocean_proximity",
-        loc="lower left",
-    )
-
-    figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / "ocean_proximity_mapa_geoespacial.png",
-        bbox_inches="tight",
-    )
-    plt.close(figure)
+        geospatial_ax.set_title("Distribuição geoespacial em relação a ocean_proximity")
+        geospatial_ax.set_axis_off()
+        geospatial_ax.legend(
+            title="ocean_proximity",
+            loc="lower left",
+        )
     # geospatial analysis - end
 
-    figure, boxplot_ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 12))
+    with subplots(
+        nrows=1,
+        ncols=1,
+        figsize=(10, 12),
+        savefig_path=PLOT_DIRECTORY_PATH / "median_income_por_ocean_proximity_boxplot.png",
+    ) as boxplot_ax:
 
-    sns.boxplot(
-        data=data,
-        x="ocean_proximity",
-        y="median_income",
-        order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
-        ax=boxplot_ax,
-    )
+        sns.boxplot(
+            data=data,
+            x="ocean_proximity",
+            y="median_income",
+            order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
+            ax=boxplot_ax,
+        )
 
-    boxplot_ax.set_title("Boxplot de median_income por ocean_proximity")
-
-    figure.savefig(
-        fname=PLOT_DIRECTORY_PATH / "median_income_por_ocean_proximity_boxplot.png",
-        bbox_inches="tight",
-    )
-    plt.close(figure)
+        boxplot_ax.set_title("Boxplot de median_income por ocean_proximity")
 
     logger.info(
         f"ocean_proximity_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
