@@ -21,6 +21,7 @@ CLUSTERING_OUTPUT_DIRECTORY_PATH: Path = Path("clustering_outputs/")
 HOUSING_STRATIFIED_PATH: Path = Path("housing_stratified.csv")
 MEDIAN_INCOME_COLUMN_NAME: str = "median_income"
 MEDIAN_INCOME_CLUSTER_COLUMN_NAME: str = "median_income_cluster"
+MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME: str = "median_income_cluster_label"
 LINKAGE_METHODS: list[str] = ["single", "complete", "average", "ward"]
 CLUSTER_COUNTS: range = range(2, 11)
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: list[str] = [
@@ -55,16 +56,52 @@ def data_complete_load() -> pl.DataFrame:
     return data_complete
 
 
-def dendrogram_plot(linkage_matrix: FloatArray, linkage_method: str) -> None:
-    logger.info("EXECUTANDO dendrogram_plot para ligação %s", linkage_method)
+SilhouetteScores = list[tuple[int, float]]
+
+
+def clustering_summary_plot(
+    data: pl.DataFrame,
+    clusters: IntArray,
+    linkage_method: str,
+    cluster_count: int,
+    linkage_matrix: FloatArray,
+    silhouette_scores: SilhouetteScores,
+) -> None:
+    logger.info(
+        "EXECUTANDO clustering_summary_plot para ligação %s com %s clusters",
+        linkage_method,
+        cluster_count,
+    )
+    cluster_order: list[int] = sorted(int(cluster) for cluster in np.unique(clusters))
+    cluster_frequencies: dict[int, int] = {
+        int(cluster): int(frequency)
+        for cluster, frequency in zip(*np.unique(clusters, return_counts=True))
+    }
+    cluster_labels: list[str] = [
+        f"{cluster}\nn={cluster_frequencies[cluster]}" for cluster in cluster_order
+    ]
+    silhouette_cluster_counts: list[int] = [
+        cluster_count for cluster_count, _ in silhouette_scores
+    ]
+    silhouette_score_values: list[float] = [
+        silhouette_score for _, silhouette_score in silhouette_scores
+    ]
+    cluster_label_values: list[str] = [
+        f"{cluster}\nn={cluster_frequencies[int(cluster)]}" for cluster in clusters
+    ]
+    data_clustered: pl.DataFrame = data.with_columns(
+        pl.Series(MEDIAN_INCOME_CLUSTER_COLUMN_NAME, clusters),
+        pl.Series(MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME, cluster_label_values),
+    )
 
     with subplots(
-        nrows=1,
+        nrows=3,
         ncols=1,
-        figsize=(18, 10),
+        figsize=(18, 24),
+        layout="constrained",
         savefig_path=CLUSTERING_OUTPUT_DIRECTORY_PATH
-        / f"median_income_{linkage_method}_dendrograma.png",
-    ) as dendrogram_ax:
+        / f"median_income_{linkage_method}_clusterizacao.png",
+    ) as (dendrogram_ax, silhouette_ax, boxplot_ax):
         dendrogram(
             linkage_matrix,
             no_labels=True,
@@ -74,57 +111,52 @@ def dendrogram_plot(linkage_matrix: FloatArray, linkage_method: str) -> None:
         dendrogram_ax.set_xlabel("Observações")
         dendrogram_ax.set_ylabel("Distância")
 
-    logger.info(
-        f"dendrogram_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
-    )
+        sns.lineplot(
+            x=silhouette_cluster_counts,
+            y=silhouette_score_values,
+            marker="o",
+            ax=silhouette_ax,
+        )
+        silhouette_ax.axvline(
+            cluster_count,
+            color="red",
+            linestyle="--",
+            linewidth=1,
+        )
+        silhouette_ax.set_title(
+            f"Silhouette por quantidade de clusters ({linkage_method})"
+        )
+        silhouette_ax.set_xlabel("Quantidade de clusters")
+        silhouette_ax.set_ylabel("Silhouette")
+        silhouette_ax.set_xticks(silhouette_cluster_counts)
 
-
-def boxplot_cluster_plot(
-    data: pl.DataFrame,
-    clusters: IntArray,
-    linkage_method: str,
-    cluster_count: int,
-) -> None:
-    logger.info(
-        "EXECUTANDO boxplot_cluster_plot para ligação %s com %s clusters",
-        linkage_method,
-        cluster_count,
-    )
-    data_clustered: pl.DataFrame = data.with_columns(
-        pl.Series(MEDIAN_INCOME_CLUSTER_COLUMN_NAME, clusters)
-    )
-
-    with subplots(
-        nrows=1,
-        ncols=1,
-        figsize=(10, 12),
-        savefig_path=CLUSTERING_OUTPUT_DIRECTORY_PATH
-        / f"median_income_{linkage_method}_{cluster_count}_clusters_boxplot.png",
-    ) as boxplot_ax:
         sns.boxplot(
             data=data_clustered,
-            x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
+            x=MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
+            order=cluster_labels,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
             f"Boxplot de median_income por cluster ({linkage_method}, {cluster_count} clusters)"
         )
+        boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
+        boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
 
     logger.info(
-        f"boxplot_cluster_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
     )
 
 
 def best_clusters_find(
-    data: pl.DataFrame,
     observations: FloatArray,
     linkage_method: str,
     linkage_matrix: FloatArray,
-) -> tuple[IntArray, int, float]:
+) -> tuple[IntArray, int, float, SilhouetteScores]:
     best_clusters: IntArray = np.array([], dtype=np.int32)
     best_cluster_count: int = 0
     best_silhouette_score: float = -np.inf
+    silhouette_scores: SilhouetteScores = []
 
     for cluster_count in CLUSTER_COUNTS:
         clusters: IntArray = np.asarray(
@@ -142,15 +174,14 @@ def best_clusters_find(
             cluster_count,
             clusters_silhouette_score,
         )
+        silhouette_scores.append((cluster_count, clusters_silhouette_score))
 
         if clusters_silhouette_score > best_silhouette_score:
             best_clusters = clusters
             best_cluster_count = cluster_count
             best_silhouette_score = clusters_silhouette_score
 
-    boxplot_cluster_plot(data, best_clusters, linkage_method, best_cluster_count)
-
-    return best_clusters, best_cluster_count, best_silhouette_score
+    return best_clusters, best_cluster_count, best_silhouette_score, silhouette_scores
 
 
 def main() -> None:
@@ -180,12 +211,25 @@ def main() -> None:
             f"linkage executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
         )
 
-        dendrogram_plot(linkage_matrix, linkage_method)
         linkage_clusters: IntArray
         cluster_count: int
         silhouette_score: float
-        linkage_clusters, cluster_count, silhouette_score = best_clusters_find(
-            data, median_income_observations, linkage_method, linkage_matrix
+        silhouette_scores: SilhouetteScores
+        (
+            linkage_clusters,
+            cluster_count,
+            silhouette_score,
+            silhouette_scores,
+        ) = best_clusters_find(
+            median_income_observations, linkage_method, linkage_matrix
+        )
+        clustering_summary_plot(
+            data,
+            linkage_clusters,
+            linkage_method,
+            cluster_count,
+            linkage_matrix,
+            silhouette_scores,
         )
 
         if silhouette_score > best_silhouette_score:
