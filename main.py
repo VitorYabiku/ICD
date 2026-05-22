@@ -1,34 +1,36 @@
 import logging
-from contextlib import contextmanager
 from pathlib import Path
 
 import contextily as cx
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
 import polars.selectors as cs
 import seaborn as sns
 
+from utils import reset_directory, subplots
+
 logger = logging.getLogger(__name__)
-LOG_SPACING_VERTICAL_LINE_COUNT = 2
+LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 
 
-TABLE_DIRECTORY_PATH = Path("tables/")
+TABLE_DIRECTORY_PATH: Path = Path("tables/")
 
 
-def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
-    numeric_columns = cs.numeric()
-    first_quartile = numeric_columns.quantile(0.25)
-    third_quartile = numeric_columns.quantile(0.75)
-    interquartile_range = third_quartile - first_quartile
-    outliers = (numeric_columns < first_quartile - 1.5 * interquartile_range) | (
+def statistics_descriptive(
+    data_lazyframe: pl.LazyFrame, filename_prefix: str
+) -> None:
+    numeric_columns: cs.Selector = cs.numeric()
+    first_quartile: pl.Expr = numeric_columns.quantile(0.25)
+    third_quartile: pl.Expr = numeric_columns.quantile(0.75)
+    interquartile_range: pl.Expr = third_quartile - first_quartile
+    outliers: pl.Expr = (numeric_columns < first_quartile - 1.5 * interquartile_range) | (
         numeric_columns > third_quartile + 1.5 * interquartile_range
     )
 
-    amplitude = numeric_columns.max() - numeric_columns.min()
+    amplitude: pl.Expr = numeric_columns.max() - numeric_columns.min()
 
-    stats_descriptive = {
+    stats_descriptive: dict[str, pl.LazyFrame] = {
         "Quantidade de Observações": data_lazyframe.count(),
         "Quantidade de Valores Nulos": data_lazyframe.null_count(),
         "Média Aritmética": data_lazyframe.mean(),
@@ -45,7 +47,7 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
         ),
     }
 
-    STATS_DESCRIPTIVE_COLUMN_NAME = "Estatística"
+    STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
     for stat_name, stat_lazyframe in stats_descriptive.items():
         stat_lazyframe.with_columns(
             pl.lit(stat_name).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
@@ -66,26 +68,13 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str):
     )
 
 
-PLOT_DIRECTORY_PATH = Path("plots/")
-
-
-@contextmanager
-def subplots(*args, savefig_path: Path, **kwargs):
-    figure, axes = plt.subplots(*args, **kwargs)
-    try:
-        yield axes
-    except Exception:
-        raise
-    else:
-        figure.savefig(fname=savefig_path, bbox_inches="tight", dpi=300)
-    finally:
-        plt.close(figure)
+PLOT_DIRECTORY_PATH: Path = Path("plots/")
 
 
 def median_income_scatterplot_bivariate(
     data_lazyframe: pl.LazyFrame, column_other: str
-):
-    data = data_lazyframe.collect()
+) -> None:
+    data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
         "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe..."
     )
@@ -110,8 +99,8 @@ def median_income_scatterplot_bivariate(
     )
 
 
-def data_numeric_plot(data_lazyframe: pl.LazyFrame):
-    data = data_lazyframe.collect()
+def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
+    data: pl.DataFrame = data_lazyframe.collect()
     logger.info("EXECUTANDO data_numeric_plot com o seguinte dataframe...")
     logger.info("%s", data.head(1))
 
@@ -144,13 +133,13 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame):
     )
 
 
-def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
-    data = data_lazyframe.drop_nulls().collect()
+def correlation_matrix_plot(data_lazyframe: pl.LazyFrame) -> None:
+    data: pl.DataFrame = data_lazyframe.drop_nulls().collect()
     logger.info("EXECUTANDO correlation_matrix_plot com o seguinte dataframe...")
     logger.info("%s", data.head(1))
 
-    correlation = data.corr()
-    mask = np.triu(np.ones_like(correlation, dtype=bool))
+    correlation: pl.DataFrame = data.corr()
+    mask: np.ndarray = np.triu(np.ones_like(correlation, dtype=bool))
 
     with subplots(
         nrows=1,
@@ -181,7 +170,7 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame):
     )
 
 
-OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = [
+OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: list[str] = [
     "ISLAND",
     "NEAR OCEAN",
     "NEAR BAY",
@@ -189,15 +178,15 @@ OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING = [
     "INLAND",
 ]
 
-COLUMNS_GEOSPATIAL = ["longitude", "latitude", "ocean_proximity"]
+COLUMNS_GEOSPATIAL: list[str] = ["longitude", "latitude", "ocean_proximity"]
 
 
-def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
-    data = data_lazyframe.collect()
+def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
+    data: pl.DataFrame = data_lazyframe.collect()
     logger.info("EXECUTANDO ocean_proximity_plot com o seguinte dataframe...")
     logger.info("%s", data.head(1))
 
-    column_name = "ocean_proximity"
+    column_name: str = "ocean_proximity"
     with subplots(
         nrows=2,
         ncols=1,
@@ -214,9 +203,9 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         )
         for container in countplot_ax.containers:
             countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
-        counts_df = data[column_name].value_counts()
-        counts = dict(counts_df.iter_rows())
-        counts_ordered = [
+        counts_df: pl.DataFrame = data[column_name].value_counts()
+        counts: dict[str, int] = dict(counts_df.iter_rows())
+        counts_ordered: list[int] = [
             counts.get(category, 0)
             for category in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
         ]
@@ -235,14 +224,14 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
                 )
         countplot_ax.set_title(f"Gráfico de barras de {column_name}")
 
-        labels_nonzero = [
+        labels_nonzero: list[str] = [
             category
             for category, count in zip(
                 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING, counts_ordered
             )
             if count > 0
         ]
-        counts_nonzero = [count for count in counts_ordered if count > 0]
+        counts_nonzero: list[int] = [count for count in counts_ordered if count > 0]
         piechart_ax.pie(
             counts_nonzero,
             labels=labels_nonzero,
@@ -256,9 +245,11 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
         piechart_ax.axis("equal")
 
     # Geospatial analysis - begin
-    geospatial_data = data_lazyframe.select(pl.col(COLUMNS_GEOSPATIAL)).collect()
+    geospatial_data: pl.DataFrame = data_lazyframe.select(
+        pl.col(COLUMNS_GEOSPATIAL)
+    ).collect()
     geospatial_pandas = geospatial_data.to_pandas()
-    geospatial_geodataframe = gpd.GeoDataFrame(
+    geospatial_geodataframe: gpd.GeoDataFrame = gpd.GeoDataFrame(
         geospatial_pandas,
         geometry=gpd.points_from_xy(
             geospatial_pandas["longitude"], geospatial_pandas["latitude"]
@@ -288,7 +279,9 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
 
         cx.add_basemap(
             geospatial_ax,
-            source=cx.providers.CartoDB.PositronNoLabels,
+            # False positive: xyzservices providers are dynamic Bunch attributes;
+            # runtime `cx.providers.CartoDB.PositronNoLabels` exists.
+            source=cx.providers.CartoDB.PositronNoLabels,  # pyrefly: ignore[missing-attribute]
             attribution=False,
         )
         geospatial_ax.set_title("Distribuição geoespacial em relação a ocean_proximity")
@@ -321,28 +314,30 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame):
     )
 
 
-def median_income_scatterplots(data_lazyframe: pl.LazyFrame):
+def median_income_scatterplots(data_lazyframe: pl.LazyFrame) -> None:
     for column_name in data_lazyframe.collect_schema().names():
         if column_name != "median_income":
             median_income_scatterplot_bivariate(data_lazyframe, column_name)
 
 
-def main():
+def main() -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
     )
 
-    DATASET_PATH = Path("dataset/housing.csv")
-    OCEAN_PROXIMITY_ENUM = pl.Enum(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING)
-    data = pl.scan_csv(
+    DATASET_PATH: Path = Path("dataset/housing.csv")
+    OCEAN_PROXIMITY_ENUM: pl.Enum = pl.Enum(
+        OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+    )
+    data: pl.DataFrame = pl.scan_csv(
         DATASET_PATH, schema_overrides={"ocean_proximity": OCEAN_PROXIMITY_ENUM}
     ).collect()
 
     logger.info("Formato dos dados: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
-    DATASET_SAMPLE_LENGTH = 2000
-    DATASET_SAMPLE_SEED = 42
+    DATASET_SAMPLE_LENGTH: int = 2064
+    DATASET_SAMPLE_SEED: int = 42
     data = data.sample(
         DATASET_SAMPLE_LENGTH,
         with_replacement=False,
@@ -353,68 +348,50 @@ def main():
     logger.info("Formato da amostra: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
-    data = data.lazy()
+    data_lazy: pl.LazyFrame = data.lazy()
 
-    # Empty the table directory
-    logger.info("Resetando diretório de tabelas (%s)", TABLE_DIRECTORY_PATH)
-    if TABLE_DIRECTORY_PATH.exists():
-        for file in TABLE_DIRECTORY_PATH.iterdir():
-            assert file.is_file()
-            file.unlink()
-    else:
-        TABLE_DIRECTORY_PATH.mkdir()
-    logger.info(
-        f"Diretório de tabelas resetado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
-    )
+    reset_directory(TABLE_DIRECTORY_PATH, "tabelas")
 
-    statistics_descriptive(data, "")
+    statistics_descriptive(data_lazy, "")
 
-    # Empty the plot directory
-    logger.info("Resetando diretório de gráficos (%s)", PLOT_DIRECTORY_PATH)
-    if PLOT_DIRECTORY_PATH.exists():
-        for file in PLOT_DIRECTORY_PATH.iterdir():
-            assert file.is_file()
-            file.unlink()
-    else:
-        PLOT_DIRECTORY_PATH.mkdir()
-    logger.info(
-        f"Diretório de gráficos resetado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
-    )
+    reset_directory(PLOT_DIRECTORY_PATH, "gráficos")
 
     sns.set_theme()
 
-    data_numeric = data.select(cs.numeric().exclude(COLUMNS_GEOSPATIAL))
+    data_numeric: pl.LazyFrame = data_lazy.select(
+        cs.numeric().exclude(COLUMNS_GEOSPATIAL)
+    )
     data_numeric_plot(data_numeric)
     median_income_scatterplots(data_numeric)
     correlation_matrix_plot(data_numeric)
 
-    OCEAN_PROXIMITY_COLUMNS_ADDITIONAL = ["median_income"]
-    ocean_proximity_data = data.select(
+    OCEAN_PROXIMITY_COLUMNS_ADDITIONAL: list[str] = ["median_income"]
+    ocean_proximity_data: pl.LazyFrame = data_lazy.select(
         pl.col(*COLUMNS_GEOSPATIAL, *OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
     )
     ocean_proximity_plot(ocean_proximity_data)
 
-    LOG_TRANSFORM_COLUMNS = [
+    LOG_TRANSFORM_COLUMNS: list[str] = [
         "households",
         "median_income",
         "population",
         "total_rooms",
         "total_bedrooms",
     ]
-    data_transformed_log = data.select(
+    data_transformed_log: pl.LazyFrame = data_lazy.select(
         pl.col(LOG_TRANSFORM_COLUMNS).log().name.suffix("_logaritmo_natural"),
         pl.col("median_income"),
     )
     data_numeric_plot(data_transformed_log)
 
-    DATA_WITH_VARIABLES_NEW_COLUMNS = [
+    DATA_WITH_VARIABLES_NEW_COLUMNS: list[str] = [
         "total_rooms",
         "households",
         "total_bedrooms",
         "population",
         "median_income",
     ]
-    data_with_variables_new = data.select(
+    data_with_variables_new: pl.LazyFrame = data_lazy.select(
         (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
         (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrooms_per_room"),
         (pl.col("population") / pl.col("households")).alias("population_per_household"),
