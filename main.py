@@ -18,16 +18,49 @@ LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 TABLE_DIRECTORY_PATH: Path = Path("tables/")
 CLUSTER_COLUMN_NAME: str = "cluster"
 
-row_with_null_or_nan_keep: pl.Expr = pl.any_horizontal(
-    pl.all().is_null()
-) | pl.any_horizontal(cs.float().is_nan())
 STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
+
+
+def row_with_null_or_nan_keep_expr() -> pl.Expr:
+    return pl.any_horizontal(pl.all().is_null()) | pl.any_horizontal(
+        cs.float().is_nan()
+    )
+
+
+def numeric_columns_selector() -> cs.Selector:
+    return cs.numeric()
+
+
+def first_quartile_expr() -> pl.Expr:
+    return numeric_columns_selector().quantile(0.25)
+
+
+def third_quartile_expr() -> pl.Expr:
+    return numeric_columns_selector().quantile(0.75)
+
+
+def interquartile_range_expr() -> pl.Expr:
+    return third_quartile_expr() - first_quartile_expr()
+
+
+def outliers_expr() -> pl.Expr:
+    return (
+        numeric_columns_selector()
+        < first_quartile_expr() - 1.5 * interquartile_range_expr()
+    ) | (
+        numeric_columns_selector()
+        > third_quartile_expr() + 1.5 * interquartile_range_expr()
+    )
+
+
+def amplitude_expr() -> pl.Expr:
+    return numeric_columns_selector().max() - numeric_columns_selector().min()
 
 
 def rows_with_null_or_nan_analyse(
     data_lazyframe: pl.LazyFrame, filename_prefix: str
 ) -> None:
-    data_lazyframe.filter(pl.any_horizontal(row_with_null_or_nan_keep)).with_columns(
+    data_lazyframe.filter(row_with_null_or_nan_keep_expr()).with_columns(
         pl.lit(
             "Observações com algum valor nulo ou número de ponto flutuante NaN"
         ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
@@ -41,16 +74,6 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
     rows_with_null_or_nan_analyse(data_lazyframe, filename_prefix)
     data_lazyframe = data_lazyframe.drop_nulls().drop_nans()
 
-    numeric_columns: cs.Selector = cs.numeric()
-    first_quartile: pl.Expr = numeric_columns.quantile(0.25)
-    third_quartile: pl.Expr = numeric_columns.quantile(0.75)
-    interquartile_range: pl.Expr = third_quartile - first_quartile
-    outliers: pl.Expr = (
-        numeric_columns < first_quartile - 1.5 * interquartile_range
-    ) | (numeric_columns > third_quartile + 1.5 * interquartile_range)
-
-    amplitude: pl.Expr = numeric_columns.max() - numeric_columns.min()
-
     stats_descriptive: dict[str, pl.LazyFrame] = {
         "Quantidade de Observações": data_lazyframe.count(),
         "Quantidade de Valores Nulos": data_lazyframe.null_count(),
@@ -61,10 +84,10 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
         "Desvio Padrão": data_lazyframe.std(
             ddof=1
         ),  # ddof=1 to compute sample standard deviation
-        "Amplitude": data_lazyframe.select(amplitude),
-        "Frequência Absoluta de Outliers": data_lazyframe.select(outliers.sum()),
+        "Amplitude": data_lazyframe.select(amplitude_expr()),
+        "Frequência Absoluta de Outliers": data_lazyframe.select(outliers_expr().sum()),
         "Frequência Relativa de Outliers (%)": data_lazyframe.select(
-            outliers.sum() * 100 / numeric_columns.count()
+            outliers_expr().sum() * 100 / numeric_columns_selector().count()
         ),
     }
 
@@ -191,42 +214,67 @@ OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: list[str] = [
     "<1H OCEAN",
     "INLAND",
 ]
+OCEAN_PROXIMITY_TRANSFORMED_COLUMN_NAME: str = "ocean_proximity_transformed"
+OCEAN_PROXIMITY_TRANSFORMED_CATEGORIES_ORDERED_ASCENDING: list[str] = [
+    "ISLAND",
+    "COASTAL",
+    "INLAND",
+]
+OCEAN_PROXIMITY_COASTAL_CATEGORIES: list[str] = [
+    "NEAR OCEAN",
+    "NEAR BAY",
+    "<1H OCEAN",
+]
 
-COLUMNS_GEOSPATIAL: list[str] = ["longitude", "latitude", "ocean_proximity"]
+COLUMNS_GEOSPATIAL: list[str] = ["longitude", "latitude"]
 
 
-def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
+def ocean_proximity_transformed_expr() -> pl.Expr:
+    return (
+        pl.when(pl.col("ocean_proximity").is_in(OCEAN_PROXIMITY_COASTAL_CATEGORIES))
+        .then(pl.lit("COASTAL"))
+        .otherwise(pl.col("ocean_proximity").cast(pl.String))
+        .alias(OCEAN_PROXIMITY_TRANSFORMED_COLUMN_NAME)
+    )
+
+
+def ocean_proximity_plot(
+    data_lazyframe: pl.LazyFrame, ocean_proximity_column_name: str
+) -> None:
+    categories_ordered: list[str] = (
+        OCEAN_PROXIMITY_TRANSFORMED_CATEGORIES_ORDERED_ASCENDING
+        if ocean_proximity_column_name == OCEAN_PROXIMITY_TRANSFORMED_COLUMN_NAME
+        else OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+    )
     data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
         "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
     )
     logger.info("%s", data.head(1))
 
-    column_name: str = "ocean_proximity"
     with subplots(
         nrows=2,
         ncols=1,
         figsize=(10, 12),
         layout="constrained",
         savefig_path=PLOT_DIRECTORY_PATH
-        / f"{column_name}_grafico_de_barras_&_grafico_de_pizza.png",
+        / f"{ocean_proximity_column_name}_grafico_de_barras_&_grafico_de_pizza.png",
     ) as (countplot_ax, piechart_ax):
         sns.countplot(
             data=data,
-            x=column_name,
+            x=ocean_proximity_column_name,
             ax=countplot_ax,
-            order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
+            order=categories_ordered,
         )
         for container in countplot_ax.containers:
             countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
-        counts_df: pl.DataFrame = data[column_name].value_counts()
+        counts_df: pl.DataFrame = data[ocean_proximity_column_name].value_counts()
         counts: dict[str, int] = dict(counts_df.iter_rows())
         counts_ordered: list[int] = [
-            counts.get(category, 0)
-            for category in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+            counts.get(category, 0) for category in categories_ordered
         ]
         # Add "0" label to categories with no observations
-        for i, category in enumerate(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING):
+        for i, category in enumerate(categories_ordered):
             if counts_ordered[i] == 0:
                 countplot_ax.annotate(
                     "0",
@@ -238,13 +286,11 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
                     fontsize=16,
                     clip_on=False,
                 )
-        countplot_ax.set_title(f"Gráfico de barras de {column_name}")
+        countplot_ax.set_title(f"Gráfico de barras de {ocean_proximity_column_name}")
 
         labels_nonzero: list[str] = [
             category
-            for category, count in zip(
-                OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING, counts_ordered
-            )
+            for category, count in zip(categories_ordered, counts_ordered)
             if count > 0
         ]
         counts_nonzero: list[int] = [count for count in counts_ordered if count > 0]
@@ -257,12 +303,12 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
             wedgeprops={"edgecolor": "white", "linewidth": 1},
             textprops={"fontsize": 12},
         )
-        piechart_ax.set_title(f"Gráfico de pizza de {column_name}")
+        piechart_ax.set_title(f"Gráfico de pizza de {ocean_proximity_column_name}")
         piechart_ax.axis("equal")
 
     # Geospatial analysis - begin
     geospatial_data: pl.DataFrame = data_lazyframe.select(
-        pl.col(COLUMNS_GEOSPATIAL)
+        pl.col(*COLUMNS_GEOSPATIAL, ocean_proximity_column_name)
     ).collect()
     geospatial_pandas = geospatial_data.to_pandas()
     geospatial_geodataframe: gpd.GeoDataFrame = gpd.GeoDataFrame(
@@ -278,11 +324,12 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
         ncols=1,
         figsize=(10, 12),
         layout="constrained",
-        savefig_path=PLOT_DIRECTORY_PATH / "ocean_proximity_mapa_geoespacial.png",
+        savefig_path=PLOT_DIRECTORY_PATH
+        / f"{ocean_proximity_column_name}_mapa_geoespacial.png",
     ) as geospatial_ax:
-        for ocean_proximity in OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING:
+        for ocean_proximity in categories_ordered:
             geospatial_category = geospatial_geodataframe[
-                geospatial_geodataframe["ocean_proximity"] == ocean_proximity
+                geospatial_geodataframe[ocean_proximity_column_name] == ocean_proximity
             ]
             if geospatial_category.empty:
                 continue
@@ -300,10 +347,12 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
             source=cx.providers.CartoDB.PositronNoLabels,  # pyrefly: ignore[missing-attribute]
             attribution=False,
         )
-        geospatial_ax.set_title("Distribuição geoespacial em relação a ocean_proximity")
+        geospatial_ax.set_title(
+            f"Distribuição geoespacial em relação a {ocean_proximity_column_name}"
+        )
         geospatial_ax.set_axis_off()
         geospatial_ax.legend(
-            title="ocean_proximity",
+            title=ocean_proximity_column_name,
             loc="lower left",
         )
     # Geospatial analysis - end
@@ -313,17 +362,19 @@ def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
         ncols=1,
         figsize=(10, 12),
         savefig_path=PLOT_DIRECTORY_PATH
-        / "median_income_por_ocean_proximity_boxplot.png",
+        / f"median_income_por_{ocean_proximity_column_name}_boxplot.png",
     ) as boxplot_ax:
         sns.boxplot(
             data=data,
-            x="ocean_proximity",
+            x=ocean_proximity_column_name,
             y="median_income",
-            order=OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING,
+            order=categories_ordered,
             ax=boxplot_ax,
         )
 
-        boxplot_ax.set_title("Boxplot de median_income por ocean_proximity")
+        boxplot_ax.set_title(
+            f"Boxplot de median_income por {ocean_proximity_column_name}"
+        )
 
     logger.info(
         f"ocean_proximity_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -386,9 +437,13 @@ def main() -> None:
 
     OCEAN_PROXIMITY_COLUMNS_ADDITIONAL: list[str] = ["median_income"]
     ocean_proximity_data: pl.LazyFrame = data_lazy.select(
-        pl.col(*COLUMNS_GEOSPATIAL, *OCEAN_PROXIMITY_COLUMNS_ADDITIONAL)
+        pl.col(
+            *COLUMNS_GEOSPATIAL,
+            "ocean_proximity",
+            *OCEAN_PROXIMITY_COLUMNS_ADDITIONAL,
+        )
     )
-    ocean_proximity_plot(ocean_proximity_data)
+    ocean_proximity_plot(ocean_proximity_data, "ocean_proximity")
 
     LOG_TRANSFORM_COLUMNS: list[str] = [
         "households",
@@ -417,14 +472,26 @@ def main() -> None:
         (pl.col("total_bedrooms") / pl.col("total_rooms")).alias("bedrooms_per_room"),
         (pl.col("population") / pl.col("households")).alias("population_per_household"),
         pl.col(*DATA_WITH_VARIABLES_NEW_COLUMNS),
+        ocean_proximity_transformed_expr(),
+    )
+
+    ocean_proximity_transformed_data: pl.LazyFrame = data_lazy.select(
+        pl.col(*COLUMNS_GEOSPATIAL, *OCEAN_PROXIMITY_COLUMNS_ADDITIONAL),
+        ocean_proximity_transformed_expr(),
+    )
+    ocean_proximity_plot(
+        ocean_proximity_transformed_data, OCEAN_PROXIMITY_TRANSFORMED_COLUMN_NAME
     )
 
     statistics_descriptive(
         data_with_variables_new, filename_prefix="dados_transformados_"
     )
-    data_numeric_plot(data_with_variables_new)
-    median_income_scatterplots(data_with_variables_new)
-    correlation_matrix_plot(data_with_variables_new)
+    data_with_variables_new_numeric: pl.LazyFrame = data_with_variables_new.select(
+        cs.numeric()
+    )
+    data_numeric_plot(data_with_variables_new_numeric)
+    median_income_scatterplots(data_with_variables_new_numeric)
+    correlation_matrix_plot(data_with_variables_new_numeric)
 
     # Extra analysis - begin
 
