@@ -1,6 +1,5 @@
 import logging
 from pathlib import Path
-from typing import Any, cast
 
 import contextily as cx
 import geopandas as gpd
@@ -8,7 +7,7 @@ import numpy as np
 import polars as pl
 import polars.selectors as cs
 import seaborn as sns
-from sklearn.model_selection import StratifiedShuffleSplit
+from sklearn.model_selection import train_test_split
 
 from utils import reset_directory, subplots
 
@@ -19,7 +18,9 @@ LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 TABLE_DIRECTORY_PATH: Path = Path("tables/")
 CLUSTER_COLUMN_NAME: str = "cluster"
 
-row_with_null_or_nan_keep: pl.Expr = pl.all().is_null() | cs.float().is_nan()
+row_with_null_or_nan_keep: pl.Expr = pl.any_horizontal(
+    pl.all().is_null()
+) | pl.any_horizontal(cs.float().is_nan())
 STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
 
 
@@ -84,7 +85,7 @@ def median_income_scatterplot_bivariate(
 ) -> None:
     data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
-        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe..."
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
     )
     logger.info("%s", data.head(1))
 
@@ -110,7 +111,9 @@ def median_income_scatterplot_bivariate(
 
 def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
     data: pl.DataFrame = data_lazyframe.collect()
-    logger.info("EXECUTANDO data_numeric_plot com o seguinte dataframe...")
+    logger.info(
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+    )
     logger.info("%s", data.head(1))
 
     for column_name in data.columns:
@@ -144,7 +147,9 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
 
 def correlation_matrix_plot(data_lazyframe: pl.LazyFrame) -> None:
     data: pl.DataFrame = data_lazyframe.drop_nulls().collect()
-    logger.info("EXECUTANDO correlation_matrix_plot com o seguinte dataframe...")
+    logger.info(
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+    )
     logger.info("%s", data.head(1))
 
     correlation: pl.DataFrame = data.corr()
@@ -192,7 +197,9 @@ COLUMNS_GEOSPATIAL: list[str] = ["longitude", "latitude", "ocean_proximity"]
 
 def ocean_proximity_plot(data_lazyframe: pl.LazyFrame) -> None:
     data: pl.DataFrame = data_lazyframe.collect()
-    logger.info("EXECUTANDO ocean_proximity_plot com o seguinte dataframe...")
+    logger.info(
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+    )
     logger.info("%s", data.head(1))
 
     column_name: str = "ocean_proximity"
@@ -334,7 +341,7 @@ def main() -> None:
         level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
     )
 
-    DATASET_PATH: Path = Path("housing_stratified.csv")
+    DATASET_PATH: Path = Path("dataset/housing_stratified.csv")
     OCEAN_PROXIMITY_ENUM: pl.Enum = pl.Enum(
         OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
     )
@@ -343,22 +350,17 @@ def main() -> None:
     ).collect()
 
     logger.info("Formato dos dados: %s", data.shape)
+    logger.info("Variáveis: %s", data.columns)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
     DATASET_SAMPLE_FRACTION: float = 0.10
     DATASET_SAMPLE_SEED: int = 42
-    stratified_splitter = StratifiedShuffleSplit(
-        n_splits=1,
+    data, _ = train_test_split(
+        data,
         train_size=DATASET_SAMPLE_FRACTION,
         random_state=DATASET_SAMPLE_SEED,
+        stratify=data[CLUSTER_COLUMN_NAME].to_numpy(),
     )
-    sample_indices, _ = next(
-        stratified_splitter.split(
-            cast(Any, np.zeros((data.height, 1))),
-            data[CLUSTER_COLUMN_NAME].to_numpy(),
-        )
-    )
-    data = data[sample_indices]
 
     logger.info("Formato da amostra: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
@@ -406,6 +408,8 @@ def main() -> None:
         "households",
         "total_bedrooms",
         "population",
+        "housing_median_age",
+        "median_house_value",
         "median_income",
     ]
     data_with_variables_new: pl.LazyFrame = data_lazy.select(

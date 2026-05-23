@@ -17,7 +17,7 @@ LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 
 DATASET_PATH: Path = Path("dataset/housing.csv")
 CLUSTERING_OUTPUT_DIRECTORY_PATH: Path = Path("clustering_outputs/")
-HOUSING_STRATIFIED_PATH: Path = Path("housing_stratified.csv")
+HOUSING_STRATIFIED_PATH: Path = Path("dataset/housing_stratified.csv")
 MEDIAN_INCOME_COLUMN_NAME: str = "median_income"
 MEDIAN_INCOME_CLUSTER_COLUMN_NAME: str = "cluster"
 LINKAGE_METHODS: list[str] = ["single", "complete", "average", "ward"]
@@ -40,15 +40,17 @@ def data_complete_load() -> pl.LazyFrame:
     data: pl.LazyFrame = pl.scan_csv(
         DATASET_PATH, schema_overrides={"ocean_proximity": ocean_proximity_enum}
     )
+    logger.info(
+        "Quantidade de observações dos dados originais: %s", data.collect().height
+    )
     data_filtered: pl.LazyFrame = data.drop_nulls().drop_nans()
     logger.info(
-        "Quantidade de observações dos dados originais: %s", data.collect_schema().len()
+        "Quantidade de observações dos dados filtrados: %s",
+        data_filtered.collect().height,
     )
     logger.info(
-        "Quantidade de observações dos dados filtrados: %s",
-        data_filtered.collect_schema().len(),
+        f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data_filtered.head().collect()
     )
-    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data_filtered.head())
 
     return data_filtered
 
@@ -123,6 +125,7 @@ def clustering_summary_plot(
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
             order=cluster_order,
+            native_scale=True,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
@@ -153,7 +156,7 @@ def best_clustering_summary_plot(
         .to_numpy()
     )
     clusters_unique = np.unique(clusters)
-    cluster_count = len(clusters_unique)
+    cluster_count = clusters_unique.size
     cluster_order: list[int] = sorted(int(cluster) for cluster in clusters_unique)
     # median_income_values: FloatArray = np.asarray(clusters, dtype=np.float64)
     # median_income_min: float = float(median_income_values.min())
@@ -192,6 +195,7 @@ def best_clustering_summary_plot(
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
             order=cluster_order,
+            native_scale=True,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
@@ -206,6 +210,7 @@ def best_clustering_summary_plot(
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             order=cluster_order,
             stat="percent",
+            native_scale=True,
             ax=cluster_size_ax,
         )
         for container in cluster_size_ax.containers:
