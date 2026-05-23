@@ -42,7 +42,7 @@ def data_complete_load() -> pl.LazyFrame:
     )
     data_filtered: pl.LazyFrame = data.drop_nulls().drop_nans()
     logger.info(
-        "Quantidade de observaões dos dados originais: %s", data.collect_schema().len()
+        "Quantidade de observações dos dados originais: %s", data.collect_schema().len()
     )
     logger.info(
         "Quantidade de observações dos dados filtrados: %s",
@@ -126,7 +126,7 @@ def clustering_summary_plot(
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
-            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count}"
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"
         )
         boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
         boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
@@ -181,7 +181,7 @@ def best_clustering_summary_plot(
         distribution_ax.set_title(
             "Histograma de median_income por cluster "
             f"({linkage_method}, {cluster_count} clusters, "
-            f"silhouette = {best_silhouette_score:.3f})"
+            f"silhueta = {best_silhouette_score:.3f})"
         )
         # distribution_ax.set_xlabel("Observações")
         # distribution_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
@@ -195,7 +195,7 @@ def best_clustering_summary_plot(
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
-            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count}"
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"
         )
         # boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
         # boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)

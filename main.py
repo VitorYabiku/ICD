@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import Any, cast
 
 import contextily as cx
 import geopandas as gpd
@@ -7,6 +8,7 @@ import numpy as np
 import polars as pl
 import polars.selectors as cs
 import seaborn as sns
+from sklearn.model_selection import StratifiedShuffleSplit
 
 from utils import reset_directory, subplots
 
@@ -15,9 +17,29 @@ LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 
 
 TABLE_DIRECTORY_PATH: Path = Path("tables/")
+CLUSTER_COLUMN_NAME: str = "cluster"
+
+row_with_null_or_nan_keep: pl.Expr = pl.all().is_null() | cs.float().is_nan()
+STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
+
+
+def rows_with_null_or_nan_analyse(
+    data_lazyframe: pl.LazyFrame, filename_prefix: str
+) -> None:
+    data_lazyframe.filter(pl.any_horizontal(row_with_null_or_nan_keep)).with_columns(
+        pl.lit(
+            "Observações com algum valor nulo ou número de ponto flutuante NaN"
+        ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
+    ).collect().write_json(
+        TABLE_DIRECTORY_PATH
+        / f"{filename_prefix}observacoes_com_algum_nan_ou_valor_nulo.json"
+    )
 
 
 def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -> None:
+    rows_with_null_or_nan_analyse(data_lazyframe, filename_prefix)
+    data_lazyframe = data_lazyframe.drop_nulls().drop_nans()
+
     numeric_columns: cs.Selector = cs.numeric()
     first_quartile: pl.Expr = numeric_columns.quantile(0.25)
     third_quartile: pl.Expr = numeric_columns.quantile(0.75)
@@ -37,7 +59,7 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
         "3º quartil": data_lazyframe.quantile(0.75),
         "Desvio Padrão": data_lazyframe.std(
             ddof=1
-        ),  # ddof=1 para obter desvio padrão amostral
+        ),  # ddof=1 to compute sample standard deviation
         "Amplitude": data_lazyframe.select(amplitude),
         "Frequência Absoluta de Outliers": data_lazyframe.select(outliers.sum()),
         "Frequência Relativa de Outliers (%)": data_lazyframe.select(
@@ -45,7 +67,6 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
         ),
     }
 
-    STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
     for stat_name, stat_lazyframe in stats_descriptive.items():
         stat_lazyframe.with_columns(
             pl.lit(stat_name).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
@@ -53,18 +74,6 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
             TABLE_DIRECTORY_PATH
             / f"{filename_prefix}estatisticas_descritivas_{stat_name}.json"
         )
-
-    data_lazyframe.filter(
-        # TODO: see if the 2 any_horizontals can be combined into one
-        pl.any_horizontal(pl.all().is_null()) | pl.any_horizontal(cs.float().is_nan())
-    ).with_columns(
-        pl.lit(
-            "Observações com algum valor nulo ou número de ponto flutuante NaN"
-        ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
-    ).collect().write_json(
-        TABLE_DIRECTORY_PATH
-        / f"{filename_prefix}observacoes_com_algum_nan_ou_valor_nulo.json"
-    )
 
 
 PLOT_DIRECTORY_PATH: Path = Path("plots/")
@@ -92,6 +101,7 @@ def median_income_scatterplot_bivariate(
             y=column_other,
             ax=ax,
         )
+        ax.set_title(f"Gráfico de espalhamento de {column_other} por median_income")
 
     logger.info(
         f"median_income_scatterplot_bivariate executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
@@ -324,7 +334,7 @@ def main() -> None:
         level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
     )
 
-    DATASET_PATH: Path = Path("dataset/housing.csv")
+    DATASET_PATH: Path = Path("housing_stratified.csv")
     OCEAN_PROXIMITY_ENUM: pl.Enum = pl.Enum(
         OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
     )
@@ -335,21 +345,29 @@ def main() -> None:
     logger.info("Formato dos dados: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
-    DATASET_SAMPLE_LENGTH: int = 2064
+    DATASET_SAMPLE_FRACTION: float = 0.10
     DATASET_SAMPLE_SEED: int = 42
-    data = data.sample(
-        DATASET_SAMPLE_LENGTH,
-        with_replacement=False,
-        shuffle=False,
-        seed=DATASET_SAMPLE_SEED,
+    stratified_splitter = StratifiedShuffleSplit(
+        n_splits=1,
+        train_size=DATASET_SAMPLE_FRACTION,
+        random_state=DATASET_SAMPLE_SEED,
     )
+    sample_indices, _ = next(
+        stratified_splitter.split(
+            cast(Any, np.zeros((data.height, 1))),
+            data[CLUSTER_COLUMN_NAME].to_numpy(),
+        )
+    )
+    data = data[sample_indices]
 
     logger.info("Formato da amostra: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
-    data_lazy: pl.LazyFrame = data.lazy()
-
     reset_directory(TABLE_DIRECTORY_PATH, "tabelas")
+    logger.info("Formato da amostra sem nulos/NaN: %s", data.shape)
+    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
+
+    data_lazy: pl.LazyFrame = data.lazy()
 
     statistics_descriptive(data_lazy, "")
 
@@ -406,7 +424,7 @@ def main() -> None:
 
     # Extra analysis - begin
 
-    # Análise de outliers de population_per_household
+    # population_per_household outlier analysis
     data_with_variables_new.sort(
         pl.col("population_per_household"), descending=True, nulls_last=True
     ).head(20).collect().write_json(
