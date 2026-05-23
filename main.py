@@ -17,16 +17,14 @@ LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 TABLE_DIRECTORY_PATH: Path = Path("tables/")
 
 
-def statistics_descriptive(
-    data_lazyframe: pl.LazyFrame, filename_prefix: str
-) -> None:
+def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -> None:
     numeric_columns: cs.Selector = cs.numeric()
     first_quartile: pl.Expr = numeric_columns.quantile(0.25)
     third_quartile: pl.Expr = numeric_columns.quantile(0.75)
     interquartile_range: pl.Expr = third_quartile - first_quartile
-    outliers: pl.Expr = (numeric_columns < first_quartile - 1.5 * interquartile_range) | (
-        numeric_columns > third_quartile + 1.5 * interquartile_range
-    )
+    outliers: pl.Expr = (
+        numeric_columns < first_quartile - 1.5 * interquartile_range
+    ) | (numeric_columns > third_quartile + 1.5 * interquartile_range)
 
     amplitude: pl.Expr = numeric_columns.max() - numeric_columns.min()
 
@@ -57,6 +55,7 @@ def statistics_descriptive(
         )
 
     data_lazyframe.filter(
+        # TODO: see if the 2 any_horizontals can be combined into one
         pl.any_horizontal(pl.all().is_null()) | pl.any_horizontal(cs.float().is_nan())
     ).with_columns(
         pl.lit(

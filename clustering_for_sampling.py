@@ -4,7 +4,6 @@ from typing import Any, cast
 
 import numpy as np
 import polars as pl
-import polars.selectors as cs
 import seaborn as sns
 from numpy.typing import NDArray
 from scipy.cluster.hierarchy import dendrogram, fcluster, linkage
@@ -20,8 +19,7 @@ DATASET_PATH: Path = Path("dataset/housing.csv")
 CLUSTERING_OUTPUT_DIRECTORY_PATH: Path = Path("clustering_outputs/")
 HOUSING_STRATIFIED_PATH: Path = Path("housing_stratified.csv")
 MEDIAN_INCOME_COLUMN_NAME: str = "median_income"
-MEDIAN_INCOME_CLUSTER_COLUMN_NAME: str = "median_income_cluster"
-MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME: str = "median_income_cluster_label"
+MEDIAN_INCOME_CLUSTER_COLUMN_NAME: str = "cluster"
 LINKAGE_METHODS: list[str] = ["single", "complete", "average", "ward"]
 CLUSTER_COUNTS: range = range(2, 11)
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: list[str] = [
@@ -35,32 +33,31 @@ FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int32]
 
 
-def data_complete_load() -> pl.DataFrame:
+def data_complete_load() -> pl.LazyFrame:
     ocean_proximity_enum: pl.Enum = pl.Enum(
         OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
     )
-    data: pl.DataFrame = pl.read_csv(
+    data: pl.LazyFrame = pl.scan_csv(
         DATASET_PATH, schema_overrides={"ocean_proximity": ocean_proximity_enum}
     )
-    data_complete: pl.DataFrame = data.filter(
-        ~(
-            pl.any_horizontal(pl.all().is_null())
-            | pl.any_horizontal(cs.float().is_nan())
-        )
+    data_filtered: pl.LazyFrame = data.drop_nulls().drop_nans()
+    logger.info(
+        "Quantidade de observaões dos dados originais: %s", data.collect_schema().len()
     )
+    logger.info(
+        "Quantidade de observações dos dados filtrados: %s",
+        data_filtered.collect_schema().len(),
+    )
+    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data_filtered.head())
 
-    logger.info("Formato dos dados: %s", data.shape)
-    logger.info("Formato dos dados completos: %s", data_complete.shape)
-    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data_complete.head())
-
-    return data_complete
+    return data_filtered
 
 
 SilhouetteScores = list[tuple[int, float]]
 
 
 def clustering_summary_plot(
-    data: pl.DataFrame,
+    data: pl.LazyFrame,
     clusters: IntArray,
     linkage_method: str,
     cluster_count: int,
@@ -73,26 +70,15 @@ def clustering_summary_plot(
         cluster_count,
     )
     cluster_order: list[int] = sorted(int(cluster) for cluster in np.unique(clusters))
-    cluster_frequencies: dict[int, int] = {
-        int(cluster): int(frequency)
-        for cluster, frequency in zip(*np.unique(clusters, return_counts=True))
-    }
-    cluster_labels: list[str] = [
-        f"{cluster}\nn={cluster_frequencies[cluster]}" for cluster in cluster_order
-    ]
-    silhouette_cluster_counts: list[int] = [
+    data_clustered: pl.DataFrame = data.with_columns(
+        pl.Series(MEDIAN_INCOME_CLUSTER_COLUMN_NAME, clusters)
+    ).collect()
+    cluster_silhouette_per_count: list[int] = [
         cluster_count for cluster_count, _ in silhouette_scores
     ]
     silhouette_score_values: list[float] = [
         silhouette_score for _, silhouette_score in silhouette_scores
     ]
-    cluster_label_values: list[str] = [
-        f"{cluster}\nn={cluster_frequencies[int(cluster)]}" for cluster in clusters
-    ]
-    data_clustered: pl.DataFrame = data.with_columns(
-        pl.Series(MEDIAN_INCOME_CLUSTER_COLUMN_NAME, clusters),
-        pl.Series(MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME, cluster_label_values),
-    )
 
     with subplots(
         nrows=3,
@@ -107,12 +93,14 @@ def clustering_summary_plot(
             no_labels=True,
             ax=dendrogram_ax,
         )
-        dendrogram_ax.set_title(f"Dendrograma de median_income ({linkage_method})")
+        dendrogram_ax.set_title(
+            f"Dendrograma de median_income (método de ligação = {linkage_method})"
+        )
         dendrogram_ax.set_xlabel("Observações")
         dendrogram_ax.set_ylabel("Distância")
 
         sns.lineplot(
-            x=silhouette_cluster_counts,
+            x=cluster_silhouette_per_count,
             y=silhouette_score_values,
             marker="o",
             ax=silhouette_ax,
@@ -124,27 +112,110 @@ def clustering_summary_plot(
             linewidth=1,
         )
         silhouette_ax.set_title(
-            f"Silhouette por quantidade de clusters ({linkage_method})"
+            f"Silhueta por quantidade de clusters (método de ligação = {linkage_method})"
         )
         silhouette_ax.set_xlabel("Quantidade de clusters")
-        silhouette_ax.set_ylabel("Silhouette")
-        silhouette_ax.set_xticks(silhouette_cluster_counts)
+        silhouette_ax.set_ylabel("Silhueta")
+        silhouette_ax.set_xticks(cluster_silhouette_per_count)
 
         sns.boxplot(
             data=data_clustered,
-            x=MEDIAN_INCOME_CLUSTER_LABEL_COLUMN_NAME,
+            x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
-            order=cluster_labels,
+            order=cluster_order,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
-            f"Boxplot de median_income por cluster ({linkage_method}, {cluster_count} clusters)"
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count}"
         )
         boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
         boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
 
     logger.info(
         f"clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+    )
+
+
+def best_clustering_summary_plot(
+    data: pl.LazyFrame,
+    linkage_method: str,
+    best_silhouette_score: float,
+) -> None:
+    logger.info(
+        "EXECUTANDO best_clustering_summary_plot para ligação %s",
+        linkage_method,
+    )
+
+    clusters = (
+        data.select(pl.col(MEDIAN_INCOME_CLUSTER_COLUMN_NAME))
+        .collect()
+        .get_column(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
+        .to_numpy()
+    )
+    clusters_unique = np.unique(clusters)
+    cluster_count = len(clusters_unique)
+    cluster_order: list[int] = sorted(int(cluster) for cluster in clusters_unique)
+    # median_income_values: FloatArray = np.asarray(clusters, dtype=np.float64)
+    # median_income_min: float = float(median_income_values.min())
+    # median_income_max: float = float(median_income_values.max())
+
+    with subplots(
+        nrows=3,
+        ncols=1,
+        figsize=(18, 24),
+        layout="constrained",
+        savefig_path=CLUSTERING_OUTPUT_DIRECTORY_PATH
+        / "median_income_best_clusterizacao_resumo.png",
+    ) as (distribution_ax, boxplot_ax, cluster_size_ax):
+        sns.histplot(
+            data=data.collect(),
+            x=MEDIAN_INCOME_COLUMN_NAME,
+            hue=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
+            hue_order=cluster_order,
+            multiple="stack",
+            bins=30,
+            ax=distribution_ax,
+        )
+        for container in distribution_ax.containers:
+            distribution_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=9)
+        distribution_ax.set_title(
+            "Histograma de median_income por cluster "
+            f"({linkage_method}, {cluster_count} clusters, "
+            f"silhouette = {best_silhouette_score:.3f})"
+        )
+        # distribution_ax.set_xlabel("Observações")
+        # distribution_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
+        # distribution_ax.set_ylim(median_income_min, median_income_max)
+
+        sns.boxplot(
+            data=data.collect(),
+            x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
+            y=MEDIAN_INCOME_COLUMN_NAME,
+            order=cluster_order,
+            ax=boxplot_ax,
+        )
+        boxplot_ax.set_title(
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count}"
+        )
+        # boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
+        # boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
+        # boxplot_ax.set_ylim(median_income_min, median_income_max)
+
+        sns.countplot(
+            data=data.collect(),
+            x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
+            order=cluster_order,
+            stat="percent",
+            ax=cluster_size_ax,
+        )
+        for container in cluster_size_ax.containers:
+            cluster_size_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
+        cluster_size_ax.set_title("Proporção de observações por cluster")
+        # cluster_size_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
+        # cluster_size_ax.set_ylabel("% de observações")
+
+    logger.info(
+        f"best_clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
     )
 
 
@@ -169,7 +240,7 @@ def best_clusters_find(
             silhouette_score(cast(Any, observations), clusters)
         )
         logger.info(
-            "Ligação %s com %s clusters: silhouette = %.6f",
+            "Ligação %s com %s clusters: silhueta = %.3f",
             linkage_method,
             cluster_count,
             clusters_silhouette_score,
@@ -191,9 +262,13 @@ def main() -> None:
     sns.set_theme()
 
     reset_directory(CLUSTERING_OUTPUT_DIRECTORY_PATH, "saídas de clusterização")
-    data: pl.DataFrame = data_complete_load()
+    data: pl.LazyFrame = data_complete_load()
     median_income_values: FloatArray = np.asarray(
-        data[MEDIAN_INCOME_COLUMN_NAME].to_numpy(), dtype=np.float64
+        data.select(pl.col(MEDIAN_INCOME_COLUMN_NAME))
+        .collect()
+        .get_column(MEDIAN_INCOME_COLUMN_NAME)
+        .to_numpy(),
+        dtype=np.float64,
     )
     median_income_observations: FloatArray = median_income_values.reshape(-1, 1)
 
@@ -223,6 +298,7 @@ def main() -> None:
         ) = best_clusters_find(
             median_income_observations, linkage_method, linkage_matrix
         )
+
         clustering_summary_plot(
             data,
             linkage_clusters,
@@ -238,12 +314,20 @@ def main() -> None:
             best_cluster_count = cluster_count
             best_silhouette_score = silhouette_score
 
-    data.with_columns(
+    data = data.with_columns(
         pl.Series(MEDIAN_INCOME_CLUSTER_COLUMN_NAME, best_clusters)
-    ).write_csv(HOUSING_STRATIFIED_PATH)
+    )
+
+    best_clustering_summary_plot(
+        data,
+        best_linkage_method,
+        best_silhouette_score,
+    )
+
+    data.collect().write_csv(HOUSING_STRATIFIED_PATH)
 
     logger.info(
-        "Melhor clusterização: ligação %s, %s clusters, silhouette = %.6f",
+        "Melhor clusterização: ligação %s, %s clusters, silhueta = %.3f",
         best_linkage_method,
         best_cluster_count,
         best_silhouette_score,
