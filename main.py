@@ -72,18 +72,23 @@ def rows_with_null_or_nan_analyse(
 
 def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -> None:
     rows_with_null_or_nan_analyse(data_lazyframe, filename_prefix)
-    data_lazyframe = data_lazyframe.drop_nulls().drop_nans()
+    EXCLUDED_COLUMNS = ["latitude", "longitude", "ocean_proximity"]
+    data_lazyframe = (
+        data_lazyframe.drop_nulls().drop_nans().select(pl.exclude(EXCLUDED_COLUMNS))
+    )
 
     stats_descriptive: dict[str, pl.LazyFrame] = {
         "Quantidade de Observações": data_lazyframe.count(),
-        "Quantidade de Valores Nulos": data_lazyframe.null_count(),
         "Média Aritmética": data_lazyframe.mean(),
-        "1º quartil": data_lazyframe.quantile(0.25),
+        "1º quartil": data_lazyframe.select(first_quartile_expr()),
         "Mediana": data_lazyframe.median(),
-        "3º quartil": data_lazyframe.quantile(0.75),
+        "3º quartil": data_lazyframe.select(third_quartile_expr()),
+        "Distância interquartil": data_lazyframe.select(interquartile_range_expr()),
         "Desvio Padrão": data_lazyframe.std(
             ddof=1
         ),  # ddof=1 to compute sample standard deviation
+        "Máximo": data_lazyframe.max(),
+        "Mínimo": data_lazyframe.min(),
         "Amplitude": data_lazyframe.select(amplitude_expr()),
         "Frequência Absoluta de Outliers": data_lazyframe.select(outliers_expr().sum()),
         "Frequência Relativa de Outliers (%)": data_lazyframe.select(
