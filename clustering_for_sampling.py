@@ -125,7 +125,6 @@ def clustering_summary_plot(
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
             order=cluster_order,
-            native_scale=True,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
@@ -195,7 +194,6 @@ def best_clustering_summary_plot(
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             y=MEDIAN_INCOME_COLUMN_NAME,
             order=cluster_order,
-            native_scale=True,
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
@@ -209,8 +207,7 @@ def best_clustering_summary_plot(
             data=data.collect(),
             x=MEDIAN_INCOME_CLUSTER_COLUMN_NAME,
             order=cluster_order,
-            stat="percent",
-            native_scale=True,
+            stat="count",
             ax=cluster_size_ax,
         )
         for container in cluster_size_ax.containers:
