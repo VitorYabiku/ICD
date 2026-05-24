@@ -11,9 +11,14 @@ TABLES_DIR = Path("tables")
 TABLES_LATEX_DIR = Path("tables_latex")
 STAT_COLUMN = "Estatística"
 EXCLUDED_COLUMNS = {"cluster"}
+ROWS_WITH_NULL_OR_NAN_PREFIX = "null_or_nan_estatisticas_descritivas_"
 RAW_STATS_PREFIX = "estatisticas_descritivas_"
 TRANSFORMED_STATS_PREFIX = "dados_transformados_estatisticas_descritivas_"
 STATS_OUTPUTS = {
+    ROWS_WITH_NULL_OR_NAN_PREFIX: (
+        "null_or_nan_estatisticas_descritivas.tex",
+        "Estatísticas descritivas dos dados com algum valor nulo ou NaN",
+    ),
     RAW_STATS_PREFIX: (
         "estatisticas_descritivas.tex",
         "Estatísticas descritivas dos dados originais",
@@ -81,7 +86,11 @@ def format_cell(value: Any) -> str:
 
 
 def format_table_cell(value: Any, numeric_column: bool) -> str:
-    if numeric_column and not isinstance(value, (int, float)) or isinstance(value, bool):
+    if (
+        numeric_column
+        and not isinstance(value, (int, float))
+        or isinstance(value, bool)
+    ):
         return rf"\multicolumn{{1}}{{c}}{{{format_cell(value)}}}"
     return format_cell(value)
 
@@ -222,6 +231,8 @@ def regular_table(path: Path, rows: list[dict[str, Any]]) -> str:
 
 def stats_group_for_path(path: Path) -> str | None:
     name = path.name
+    if name.startswith(ROWS_WITH_NULL_OR_NAN_PREFIX):
+        return ROWS_WITH_NULL_OR_NAN_PREFIX
     if name.startswith(TRANSFORMED_STATS_PREFIX):
         return TRANSFORMED_STATS_PREFIX
     if name.startswith(RAW_STATS_PREFIX):
@@ -240,7 +251,11 @@ def fused_stats_table(paths: list[Path], caption: str, output_name: str) -> str:
     rows: list[dict[str, Any]] = []
     for path in paths:
         data = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(data, list) or len(data) != 1 or not isinstance(data[0], dict):
+        if (
+            not isinstance(data, list)
+            or len(data) != 1
+            or not isinstance(data[0], dict)
+        ):
             raise TypeError(f"{path}: expected one-row statistic table")
         rows.append(data[0])
 

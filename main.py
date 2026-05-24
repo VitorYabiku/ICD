@@ -60,25 +60,62 @@ def amplitude_expr() -> pl.Expr:
 def rows_with_null_or_nan_analyse(
     data_lazyframe: pl.LazyFrame, filename_prefix: str
 ) -> None:
-    data_lazyframe.filter(row_with_null_or_nan_keep_expr()).with_columns(
-        pl.lit(
-            "Observações com algum valor nulo ou número de ponto flutuante NaN"
-        ).alias(STATS_DESCRIPTIVE_COLUMN_NAME)
-    ).collect().write_json(
-        TABLE_DIRECTORY_PATH
-        / f"{filename_prefix}observacoes_com_algum_nan_ou_valor_nulo.json"
+    statistics_descriptive(data_lazyframe, filename_prefix)
+
+    ocean_proximity_column_name: str = "ocean_proximity_rows_with_null_or_nan"
+    data_lazyframe = data_lazyframe.rename(
+        {"ocean_proximity": "ocean_proximity_rows_with_null_or_nan"}
     )
+
+    data = data_lazyframe.collect()
+    with subplots(
+        nrows=1,
+        ncols=1,
+        figsize=(10, 12),
+        layout="constrained",
+        savefig_path=PLOT_DIRECTORY_PATH
+        / f"{ocean_proximity_column_name}_grafico_de_barras_&_grafico_de_pizza.png",
+    ) as countplot_ax:
+        categories_ordered: list[str] = (
+            OCEAN_PROXIMITY_TRANSFORMED_CATEGORIES_ORDERED_ASCENDING
+            if ocean_proximity_column_name == OCEAN_PROXIMITY_TRANSFORMED_COLUMN_NAME
+            else OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
+        )
+        sns.countplot(
+            data=data,
+            x=ocean_proximity_column_name,
+            ax=countplot_ax,
+            order=categories_ordered,
+        )
+        for container in countplot_ax.containers:
+            countplot_ax.bar_label(container, fmt="%.0f", padding=3, fontsize=16)
+        counts_df: pl.DataFrame = data[ocean_proximity_column_name].value_counts()
+        counts: dict[str, int] = dict(counts_df.iter_rows())
+        counts_ordered: list[int] = [
+            counts.get(category, 0) for category in categories_ordered
+        ]
+        # Add "0" label to categories with no observations
+        for i, category in enumerate(categories_ordered):
+            if counts_ordered[i] == 0:
+                countplot_ax.annotate(
+                    "0",
+                    xy=(i, 0),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha="center",
+                    va="bottom",
+                    fontsize=16,
+                    clip_on=False,
+                )
+        countplot_ax.set_title(f"Gráfico de barras de {ocean_proximity_column_name}")
 
 
 def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -> None:
-    rows_with_null_or_nan_analyse(data_lazyframe, filename_prefix)
     EXCLUDED_COLUMNS = ["latitude", "longitude", "ocean_proximity"]
-    data_lazyframe = (
-        data_lazyframe.drop_nulls().drop_nans().select(pl.exclude(EXCLUDED_COLUMNS))
-    )
+    data_lazyframe = data_lazyframe.select(pl.exclude(EXCLUDED_COLUMNS))
 
     stats_descriptive: dict[str, pl.LazyFrame] = {
-        "Quantidade de Observações": data_lazyframe.count(),
+        "Quantidade de Observações não nulas": data_lazyframe.count(),
         "Média Aritmética": data_lazyframe.mean(),
         "1º quartil": data_lazyframe.select(first_quartile_expr()),
         "Mediana": data_lazyframe.median(),
@@ -397,11 +434,22 @@ def main() -> None:
         level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
     )
 
-    DATASET_PATH: Path = Path("dataset/housing_stratified.csv")
+    DATASET_NON_STRATIFIED_PATH: Path = Path("dataset/housing.csv")
     OCEAN_PROXIMITY_ENUM: pl.Enum = pl.Enum(
         OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
     )
-    data: pl.DataFrame = pl.scan_csv(
+    data_non_stratified = pl.scan_csv(
+        DATASET_NON_STRATIFIED_PATH,
+        schema_overrides={"ocean_proximity": OCEAN_PROXIMITY_ENUM},
+    ).filter(row_with_null_or_nan_keep_expr())
+
+    reset_directory(TABLE_DIRECTORY_PATH, "tabelas")
+    reset_directory(PLOT_DIRECTORY_PATH, "gráficos")
+
+    rows_with_null_or_nan_analyse(data_non_stratified, "null_or_nan_")
+
+    DATASET_PATH: Path = Path("dataset/housing_stratified.csv")
+    data = pl.scan_csv(
         DATASET_PATH, schema_overrides={"ocean_proximity": OCEAN_PROXIMITY_ENUM}
     ).collect()
 
@@ -421,15 +469,9 @@ def main() -> None:
     logger.info("Formato da amostra: %s", data.shape)
     logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
 
-    reset_directory(TABLE_DIRECTORY_PATH, "tabelas")
-    logger.info("Formato da amostra sem nulos/NaN: %s", data.shape)
-    logger.info(f"%s{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}", data.head())
-
     data_lazy: pl.LazyFrame = data.lazy()
 
     statistics_descriptive(data_lazy, "")
-
-    reset_directory(PLOT_DIRECTORY_PATH, "gráficos")
 
     sns.set_theme()
 
@@ -498,14 +540,14 @@ def main() -> None:
     median_income_scatterplots(data_with_variables_new_numeric)
     correlation_matrix_plot(data_with_variables_new_numeric)
 
-    # Extra analysis - begin
-
-    # population_per_household outlier analysis
-    data_with_variables_new.sort(
-        pl.col("population_per_household"), descending=True, nulls_last=True
-    ).head(20).collect().write_json(
-        TABLE_DIRECTORY_PATH / "population_per_household_outliers.json"
-    )
+    # # Extra analysis - begin
+    #
+    # # population_per_household outlier analysis
+    # data_with_variables_new.sort(
+    #     pl.col("population_per_household"), descending=True, nulls_last=True
+    # ).head(20).collect().write_json(
+    #     TABLE_DIRECTORY_PATH / "population_per_household_outliers.json"
+    # )
     # Extra analysis - end
 
 
