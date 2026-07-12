@@ -7,6 +7,13 @@
   # https://devenv.sh/packages/
   packages = [ pkgs.pyrefly pkgs.ruff ];
 
+  # Dynamic libs for numpy
+  env.LD_LIBRARY_PATH = lib.makeLibraryPath [
+    pkgs.zlib
+    pkgs.expat
+    pkgs.stdenv.cc.cc.lib
+  ];
+
   # https://devenv.sh/languages/
   languages.python = {
     enable = true;
