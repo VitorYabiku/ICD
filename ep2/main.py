@@ -15,7 +15,10 @@ logger = logging.getLogger(__name__)
 LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 
 
-TABLE_DIRECTORY_PATH: Path = Path("tables/")
+EP2_DIRECTORY_PATH: Path = Path(__file__).resolve().parent
+PROJECT_DIRECTORY_PATH: Path = EP2_DIRECTORY_PATH.parent
+DATASET_DIRECTORY_PATH: Path = PROJECT_DIRECTORY_PATH / "dataset"
+TABLE_DIRECTORY_PATH: Path = EP2_DIRECTORY_PATH / "tables"
 CLUSTER_COLUMN_NAME: str = "cluster"
 
 STATS_DESCRIPTIVE_COLUMN_NAME: str = "Estatística"
@@ -142,7 +145,7 @@ def statistics_descriptive(data_lazyframe: pl.LazyFrame, filename_prefix: str) -
         )
 
 
-PLOT_DIRECTORY_PATH: Path = Path("plots/")
+PLOT_DIRECTORY_PATH: Path = EP2_DIRECTORY_PATH / "plots"
 
 
 def median_income_scatterplot_bivariate(
@@ -434,7 +437,7 @@ def main() -> None:
         level=logging.INFO, format="%(levelname)s:%(module)s.%(funcName)s:%(message)s"
     )
 
-    DATASET_NON_STRATIFIED_PATH: Path = Path("dataset/housing.csv")
+    DATASET_NON_STRATIFIED_PATH: Path = DATASET_DIRECTORY_PATH / "housing.csv"
     OCEAN_PROXIMITY_ENUM: pl.Enum = pl.Enum(
         OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING
     )
@@ -448,7 +451,7 @@ def main() -> None:
 
     rows_with_null_or_nan_analyse(data_non_stratified, "null_or_nan_")
 
-    DATASET_PATH: Path = Path("dataset/housing_stratified.csv")
+    DATASET_PATH: Path = DATASET_DIRECTORY_PATH / "housing_stratified.csv"
     data = pl.scan_csv(
         DATASET_PATH, schema_overrides={"ocean_proximity": OCEAN_PROXIMITY_ENUM}
     ).collect()

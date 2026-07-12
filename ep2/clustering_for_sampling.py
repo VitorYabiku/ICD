@@ -15,9 +15,12 @@ logger = logging.getLogger(__name__)
 LOG_SPACING_VERTICAL_LINE_COUNT: int = 2
 
 
-DATASET_PATH: Path = Path("dataset/housing.csv")
-CLUSTERING_OUTPUT_DIRECTORY_PATH: Path = Path("clustering_outputs/")
-HOUSING_STRATIFIED_PATH: Path = Path("dataset/housing_stratified.csv")
+EP2_DIRECTORY_PATH: Path = Path(__file__).resolve().parent
+PROJECT_DIRECTORY_PATH: Path = EP2_DIRECTORY_PATH.parent
+DATASET_DIRECTORY_PATH: Path = PROJECT_DIRECTORY_PATH / "dataset"
+DATASET_PATH: Path = DATASET_DIRECTORY_PATH / "housing.csv"
+CLUSTERING_OUTPUT_DIRECTORY_PATH: Path = EP2_DIRECTORY_PATH / "clustering_outputs"
+HOUSING_STRATIFIED_PATH: Path = DATASET_DIRECTORY_PATH / "housing_stratified.csv"
 MEDIAN_INCOME_COLUMN_NAME: str = "median_income"
 MEDIAN_INCOME_CLUSTER_COLUMN_NAME: str = "cluster"
 LINKAGE_METHODS: list[str] = ["single", "complete", "average", "ward"]

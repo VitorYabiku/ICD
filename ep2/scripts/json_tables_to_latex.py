@@ -7,8 +7,9 @@ from pathlib import Path
 from typing import Any
 
 
-TABLES_DIR = Path("tables")
-TABLES_LATEX_DIR = Path("tables_latex")
+EP2_DIR = Path(__file__).resolve().parent.parent
+TABLES_DIR = EP2_DIR / "tables"
+TABLES_LATEX_DIR = EP2_DIR / "tables_latex"
 STAT_COLUMN = "Estatística"
 EXCLUDED_COLUMNS = {"cluster"}
 ROWS_WITH_NULL_OR_NAN_PREFIX = "null_or_nan_estatisticas_descritivas_"
