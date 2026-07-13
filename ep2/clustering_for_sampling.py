@@ -117,7 +117,7 @@ def clustering_summary_plot(
             linewidth=1,
         )
         silhouette_ax.set_title(
-            f"Silhueta por quantidade de clusters (método de ligação = {linkage_method})"
+            f"Silhueta por quantidade de clusters (método de ligação = {linkage_method})"  # noqa: E501
         )
         silhouette_ax.set_xlabel("Quantidade de clusters")
         silhouette_ax.set_ylabel("Silhueta")
@@ -131,13 +131,13 @@ def clustering_summary_plot(
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
-            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"  # noqa: E501
         )
         boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
         boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
 
     logger.info(
-        f"clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 
@@ -200,7 +200,7 @@ def best_clustering_summary_plot(
             ax=boxplot_ax,
         )
         boxplot_ax.set_title(
-            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"
+            f"Boxplots de median_income por cluster (método de ligação = {linkage_method}, nº de clusters = {cluster_count})"  # noqa: E501
         )
         # boxplot_ax.set_xlabel(MEDIAN_INCOME_CLUSTER_COLUMN_NAME)
         # boxplot_ax.set_ylabel(MEDIAN_INCOME_COLUMN_NAME)
@@ -220,7 +220,7 @@ def best_clustering_summary_plot(
         # cluster_size_ax.set_ylabel("% de observações")
 
     logger.info(
-        f"best_clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"best_clustering_summary_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 

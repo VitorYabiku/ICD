@@ -98,7 +98,7 @@ def rows_with_null_or_nan_analyse(
             counts.get(category, 0) for category in categories_ordered
         ]
         # Add "0" label to categories with no observations
-        for i, category in enumerate(categories_ordered):
+        for i, category in enumerate(categories_ordered):  # noqa: B007
             if counts_ordered[i] == 0:
                 countplot_ax.annotate(
                     "0",
@@ -153,7 +153,7 @@ def median_income_scatterplot_bivariate(
 ) -> None:
     data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
-        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."  # noqa: E501
     )
     logger.info("%s", data.head(1))
 
@@ -173,14 +173,14 @@ def median_income_scatterplot_bivariate(
         ax.set_title(f"Gráfico de espalhamento de {column_other} por median_income")
 
     logger.info(
-        f"median_income_scatterplot_bivariate executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"median_income_scatterplot_bivariate executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 
 def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
     data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
-        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."  # noqa: E501
     )
     logger.info("%s", data.head(1))
 
@@ -191,7 +191,7 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
             figsize=(10, 12),
             layout="constrained",
             savefig_path=PLOT_DIRECTORY_PATH
-            / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",
+            / f"{column_name}_histograma_&_boxplot_&_grafico_de_frequencia_acumulada.png",  # noqa: E501
         ) as (histplot_ax, boxplot_ax, ecdfplot_ax):
             sns.histplot(
                 data=data, x=column_name, kde=True, kde_kws={"cut": 0}, ax=histplot_ax
@@ -209,14 +209,14 @@ def data_numeric_plot(data_lazyframe: pl.LazyFrame) -> None:
             ecdfplot_ax.set_title(f"Gráfico de frequência acumulada de {column_name}")
 
     logger.info(
-        f"data_numeric_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"data_numeric_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 
 def correlation_matrix_plot(data_lazyframe: pl.LazyFrame) -> None:
     data: pl.DataFrame = data_lazyframe.drop_nulls().collect()
     logger.info(
-        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."  # noqa: E501
     )
     logger.info("%s", data.head(1))
 
@@ -248,7 +248,7 @@ def correlation_matrix_plot(data_lazyframe: pl.LazyFrame) -> None:
         )
 
     logger.info(
-        f"correlation_matrix_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"correlation_matrix_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 
@@ -293,7 +293,7 @@ def ocean_proximity_plot(
     )
     data: pl.DataFrame = data_lazyframe.collect()
     logger.info(
-        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."
+        "EXECUTANDO median_income_scatterplot_bivariate com o seguinte dataframe (apenas a primeira observação mostrada como exemplo)..."  # noqa: E501
     )
     logger.info("%s", data.head(1))
 
@@ -319,7 +319,7 @@ def ocean_proximity_plot(
             counts.get(category, 0) for category in categories_ordered
         ]
         # Add "0" label to categories with no observations
-        for i, category in enumerate(categories_ordered):
+        for i, category in enumerate(categories_ordered):  # noqa: B007
             if counts_ordered[i] == 0:
                 countplot_ax.annotate(
                     "0",
@@ -335,7 +335,7 @@ def ocean_proximity_plot(
 
         labels_nonzero: list[str] = [
             category
-            for category, count in zip(categories_ordered, counts_ordered)
+            for category, count in zip(categories_ordered, counts_ordered)  # noqa: B905
             if count > 0
         ]
         counts_nonzero: list[int] = [count for count in counts_ordered if count > 0]
@@ -422,7 +422,7 @@ def ocean_proximity_plot(
         )
 
     logger.info(
-        f"ocean_proximity_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"ocean_proximity_plot executado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"  # noqa: E501
     )
 
 

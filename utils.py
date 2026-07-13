@@ -32,5 +32,7 @@ def reset_directory(directory_path: Path, directory_description: str) -> None:
     else:
         directory_path.mkdir()
     logger.info(
-        f"Diretório de {directory_description} resetado com SUCESSO{LOG_SPACING_VERTICAL_LINE_COUNT * '\n'}"
+        f"Diretório de {directory_description} resetado com SUCESSO{
+            LOG_SPACING_VERTICAL_LINE_COUNT * '\n'
+        }"
     )

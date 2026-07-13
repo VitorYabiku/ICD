@@ -25,6 +25,17 @@
     };
   };
 
+  tasks = {
+    "quality:ruff" = {
+      exec = "ruff check .";
+      before = [ "devenv:enterTest" ];
+    };
+    "quality:pyrefly" = {
+      exec = "pyrefly check";
+      before = [ "devenv:enterTest" ];
+    };
+  };
+
   # https://devenv.sh/processes/
   # processes.dev.exec = "${lib.getExe pkgs.watchexec} -n -- ls -la";
 

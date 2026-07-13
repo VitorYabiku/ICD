@@ -7,3 +7,10 @@ uv run python -m ep2.clustering_for_sampling
 uv run python -m ep2.main
 uv run python -m ep2.scripts.json_tables_to_latex
 ```
+
+Checagens:
+
+```sh
+devenv tasks run quality
+devenv test
+```

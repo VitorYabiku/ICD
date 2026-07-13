@@ -59,7 +59,9 @@ def main():
 
     dataset_rows_with_null_or_nan = dataset_lazy.filter(ROW_WITH_NULL_OR_NAN_EXPR)
     print(
-        f"Quantidade de linhas com algum null ou NaN: {len(dataset_rows_with_null_or_nan.collect())}"
+        f"Quantidade de linhas com algum null ou NaN: {
+            len(dataset_rows_with_null_or_nan.collect())
+        }"
     )
 
     DATASET_SAMPLE_SEED: Final[int] = 42

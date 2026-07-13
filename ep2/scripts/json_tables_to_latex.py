@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations  # noqa: I001
 
 import json
 import math
@@ -88,7 +88,7 @@ def format_cell(value: Any) -> str:
 
 def format_table_cell(value: Any, numeric_column: bool) -> str:
     if (
-        numeric_column
+        numeric_column  # noqa: RUF021
         and not isinstance(value, (int, float))
         or isinstance(value, bool)
     ):
@@ -209,7 +209,7 @@ def regular_table(path: Path, rows: list[dict[str, Any]]) -> str:
         r"\midrule",
     ]
     for row in rows:
-        lines.append(
+        lines.append(  # noqa: PERF401
             format_cell(row.get(columns[0]))
             + " & "
             + " & ".join(
@@ -286,7 +286,7 @@ def fused_stats_table(paths: list[Path], caption: str, output_name: str) -> str:
         r"\midrule",
     ]
     for row in rows:
-        lines.append(
+        lines.append(  # noqa: PERF401
             bold(format_cell(row.get(columns[0])))
             + " & "
             + " & ".join(
