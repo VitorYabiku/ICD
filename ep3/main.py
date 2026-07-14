@@ -1,15 +1,22 @@
 from pathlib import Path
 from typing import Final
 
+import numpy as np
 import polars as pl
 import polars.selectors as cs
+from sklearn.linear_model import LinearRegression
 
 EP3_DIRECTORY_PATH: Final[Path] = Path(__file__).resolve().parent
 PROJECT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH.parent
 DATASET_DIRECTORY_PATH: Final[Path] = PROJECT_DIRECTORY_PATH / "dataset"
 DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing.csv"
 
-TARGET_COLUMN_NAME: Final = "median_income"
+TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
+NUMERIC_FEATURE_COLUMN_NAMES: Final = (
+    "rooms_per_household",
+    "bedrooms_per_room",
+    "population_per_household",
+)
 OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: Final = (
     "ISLAND",
     "NEAR OCEAN",
@@ -21,9 +28,6 @@ OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: Final = (
 ROW_WITH_NULL_OR_NAN_EXPR: Final[pl.Expr] = pl.any_horizontal(
     pl.all().is_null()
 ) | pl.any_horizontal(cs.float().is_nan())
-MIN_MAX_SCALE_EXPR: Final[pl.Expr] = (cs.numeric() - cs.numeric().min()) / (
-    cs.numeric().max() - cs.numeric().min()
-)
 Z_SCORE_SCALE_EXPR: Final[pl.Expr] = (
     cs.numeric() - cs.numeric().mean()
 ) / cs.numeric().std()
@@ -36,32 +40,83 @@ def data_train_test_val_split(
 
     TRAIN_FRACTION: Final[float] = 0.8
     TRAIN_ROW_COUNT: Final = int(TRAIN_FRACTION * dataset_row_count)
-    data_train_lazy: pl.LazyFrame = dataset_lazy.head(TRAIN_ROW_COUNT).with_columns(
-        MIN_MAX_SCALE_EXPR
-    )
+    data_train_lazy: pl.LazyFrame = dataset_lazy.head(TRAIN_ROW_COUNT)
 
     TEST_FRACTION: Final[float] = 0.1
     TEST_ROW_COUNT: Final = int(TEST_FRACTION * dataset_row_count)
-    data_test_lazy: pl.LazyFrame = dataset_lazy.slice(
-        TRAIN_ROW_COUNT, TEST_ROW_COUNT
-    ).with_columns(MIN_MAX_SCALE_EXPR)
+    data_test_lazy: pl.LazyFrame = dataset_lazy.slice(TRAIN_ROW_COUNT, TEST_ROW_COUNT)
 
     data_val_lazy: pl.LazyFrame = dataset_lazy.slice(
         TRAIN_ROW_COUNT + TEST_ROW_COUNT, None
-    ).with_columns(MIN_MAX_SCALE_EXPR)
+    )
 
     return data_train_lazy, data_test_lazy, data_val_lazy
 
 
-def linear_regression_train(dataset_lazy: pl.LazyFrame):
-    dataset_lazy: pl.LazyFrame = (
-        dataset_lazy.collect()
-        .to_dummies(
-            "ocean_proximity",
-            drop_first=True,  # Dummy variables for linear regression
+def linear_regression_data_preprocess(
+    dataset_lazy: pl.LazyFrame,
+    train_numeric_statistics_lazy: pl.LazyFrame,
+) -> pl.LazyFrame:
+    numeric_statistics_column_names = [
+        f"{column_name}_{statistic}"
+        for column_name in NUMERIC_FEATURE_COLUMN_NAMES
+        for statistic in ("min", "max")
+    ]
+    min_max_scale_exprs = []
+    for column_name in NUMERIC_FEATURE_COLUMN_NAMES:
+        min_column_name = f"{column_name}_min"
+        max_column_name = f"{column_name}_max"
+        min_max_scale_exprs.append(
+            pl.when(pl.col(min_column_name) == pl.col(max_column_name))
+            .then(0.0)
+            .otherwise(
+                (pl.col(column_name) - pl.col(min_column_name))
+                / (pl.col(max_column_name) - pl.col(min_column_name))
+            )
+            .alias(column_name)
         )
-        .lazy()
+
+    return (
+        dataset_lazy.join(train_numeric_statistics_lazy, how="cross")
+        .with_columns(*min_max_scale_exprs)
+        .drop(*numeric_statistics_column_names)
     )
+
+
+def linear_regression_train(
+    train_lazy: pl.LazyFrame,
+    test_lazy: pl.LazyFrame,
+    val_lazy: pl.LazyFrame,
+):
+    train_numeric_statistics_lazy = train_lazy.select(
+        *[
+            expression
+            for column_name in NUMERIC_FEATURE_COLUMN_NAMES
+            for expression in (
+                pl.col(column_name).min().alias(f"{column_name}_min"),
+                pl.col(column_name).max().alias(f"{column_name}_max"),
+            )
+        ]
+    )
+    train_lazy = linear_regression_data_preprocess(
+        train_lazy, train_numeric_statistics_lazy
+    )
+    test_lazy = linear_regression_data_preprocess(
+        test_lazy, train_numeric_statistics_lazy
+    )
+    val_lazy = linear_regression_data_preprocess(
+        val_lazy, train_numeric_statistics_lazy
+    )
+
+    train = train_lazy.collect()
+    train_y: np.ndarray = train.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+    train_X: np.ndarray = train.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+    linear_regression_model: Final = LinearRegression().fit(train_X, train_y)
+
+    test = test_lazy.collect()
+    test_X: np.ndarray = test.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+    test_y: np.ndarray = test.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+    print(linear_regression_model.score(test_X, test_y))
 
 
 def tree_based_models_train(dataset_lazy: pl.LazyFrame):
@@ -69,7 +124,7 @@ def tree_based_models_train(dataset_lazy: pl.LazyFrame):
         dataset_lazy.collect()
         .to_dummies(
             "ocean_proximity",
-            drop_first=False,  # One-hot encoding for tree-based model
+            drop_first=False,  # Use one-hot encoding for tree-based model
         )
         .lazy()
     )
@@ -91,10 +146,10 @@ def main():
     )
 
     DATA_SAMPLE_SEED: Final[int] = 42
-    dataset_lazy = (
+    dataset = (
         dataset_lazy.filter(~ROW_WITH_NULL_OR_NAN_EXPR)
         .select(
-            TARGET_COLUMN_NAME,
+            TARGET_VARIABLE_COLUMN_NAME,
             (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
             (pl.col("total_bedrooms") / pl.col("total_rooms")).alias(
                 "bedrooms_per_room"
@@ -107,15 +162,21 @@ def main():
         .collect()
         # Shuffle data before splitting
         .sample(fraction=1.0, shuffle=True, seed=DATA_SAMPLE_SEED)
+    )
+    linear_regression_dataset_lazy = dataset.to_dummies(
+        "ocean_proximity",
+        drop_first=True, # Use dummy variables for linear regression
     ).lazy()
 
     data_train_lazy, data_test_lazy, data_val_lazy = data_train_test_val_split(
-        dataset_lazy
+        linear_regression_dataset_lazy
     )
 
     print(data_train_lazy.collect())
     print(data_test_lazy.collect())
     print(data_val_lazy.collect())
+
+    linear_regression_train(data_train_lazy, data_test_lazy, data_val_lazy)
 
 
 if __name__ == "__main__":
