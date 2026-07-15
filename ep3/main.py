@@ -12,8 +12,12 @@ EP3_DIRECTORY_PATH: Final[Path] = Path(__file__).resolve().parent
 PROJECT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH.parent
 DATASET_DIRECTORY_PATH: Final[Path] = PROJECT_DIRECTORY_PATH / "dataset"
 DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing.csv"
+
 FOLD_COUNT: Final[int] = 5
 TREE_BASED_MODELS_RANDOM_STATE: Final[int] = 42
+DECISION_TREE_MAX_DEPTH_VALUES: Final = (None, 3, 5, 10, 20)
+DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES: Final = (2, 5, 10)
+DECISION_TREE_MIN_SAMPLES_LEAF_VALUES: Final = (1, 2, 4)
 
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
@@ -41,7 +45,6 @@ NUMERIC_STATISTICS_COLUMN_NAMES: Final = [
     for column_name in NUMERIC_FEATURE_COLUMN_NAMES
     for statistic in ("min", "max")
 ]
-
 NUMERIC_STATISTICS_EXPRESSIONS: Final = [
     expression
     for column_name in NUMERIC_FEATURE_COLUMN_NAMES
@@ -135,17 +138,68 @@ def decision_tree_train(
             ~pl.col("fold").is_in([test_fold, validation_fold])
         ).drop("fold")
         test_lazy = dataset_lazy.filter(pl.col("fold") == test_fold).drop("fold")
-        # Reserved for hyperparameter tuning.
-        _validation_lazy = dataset_lazy.filter(pl.col("fold") == validation_fold).drop(
+        validation_lazy = dataset_lazy.filter(
+            pl.col("fold") == validation_fold
+        ).drop("fold")
+        final_train_lazy = dataset_lazy.filter(pl.col("fold") != test_fold).drop(
             "fold"
         )
 
         train = train_lazy.collect()
         train_y: np.ndarray = train.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
         train_X: np.ndarray = train.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+
+        validation = validation_lazy.collect()
+        validation_X: np.ndarray = validation.drop(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+        validation_y: np.ndarray = validation.get_column(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+
+        best_validation_score = -np.inf
+        best_max_depth: int | None = None
+        best_min_samples_split = 2
+        best_min_samples_leaf = 1
+        for max_depth in DECISION_TREE_MAX_DEPTH_VALUES:
+            for min_samples_split in DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES:
+                for min_samples_leaf in DECISION_TREE_MIN_SAMPLES_LEAF_VALUES:
+                    candidate_model = DecisionTreeRegressor(
+                        max_depth=max_depth,
+                        min_samples_split=min_samples_split,
+                        min_samples_leaf=min_samples_leaf,
+                        random_state=TREE_BASED_MODELS_RANDOM_STATE,
+                    ).fit(train_X, train_y)
+                    validation_score = candidate_model.score(
+                        validation_X, validation_y
+                    )
+                    if validation_score > best_validation_score:
+                        best_validation_score = validation_score
+                        best_max_depth = max_depth
+                        best_min_samples_split = min_samples_split
+                        best_min_samples_leaf = min_samples_leaf
+
+        print(
+            f"Decision tree fold {test_fold + 1} best hyperparameters: "
+            f"max_depth={best_max_depth}, "
+            f"min_samples_split={best_min_samples_split}, "
+            f"min_samples_leaf={best_min_samples_leaf}; "
+            f"validation R²: {best_validation_score}"
+        )
+
+        final_train = final_train_lazy.collect()
+        final_train_y: np.ndarray = final_train.get_column(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+        final_train_X: np.ndarray = final_train.drop(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
         decision_tree_model: Final = DecisionTreeRegressor(
-            random_state=TREE_BASED_MODELS_RANDOM_STATE
-        ).fit(train_X, train_y)
+            max_depth=best_max_depth,
+            min_samples_split=best_min_samples_split,
+            min_samples_leaf=best_min_samples_leaf,
+            random_state=TREE_BASED_MODELS_RANDOM_STATE,
+        ).fit(final_train_X, final_train_y)
 
         test = test_lazy.collect()
         test_X: np.ndarray = test.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
