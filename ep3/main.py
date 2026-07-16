@@ -40,6 +40,8 @@ RANDOM_FOREST_PARAM_GRID: Final = {
     "max_features": RANDOM_FOREST_MAX_FEATURES_VALUES,
 }
 
+type Hyperparameters = dict[str, object]
+
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
     "rooms_per_household",
@@ -154,7 +156,7 @@ def linear_regression_train(
 
 def decision_tree_train(
     dataset_lazy: pl.LazyFrame,
-) -> list[float]:
+) -> tuple[list[float], Hyperparameters]:
     dataset = dataset_lazy.collect()
     features, target = features_and_target_get(dataset)
     print("\n=== Árvore de decisão ===")
@@ -213,12 +215,12 @@ def decision_tree_train(
         f"melhor nas folds externas: {overall_best_folds or 'nenhuma'}"
     )
 
-    return scores
+    return scores, dict(overall_best_params)
 
 
 def random_forest_train(
     dataset_lazy: pl.LazyFrame,
-) -> list[float]:
+) -> tuple[list[float], Hyperparameters]:
     dataset = dataset_lazy.collect()
     features, target = features_and_target_get(dataset)
     print("\n=== Floresta aleatória ===")
@@ -276,7 +278,7 @@ def random_forest_train(
         f"melhor nas folds externas: {overall_best_folds or 'nenhuma'}"
     )
 
-    return scores
+    return scores, dict(overall_best_params)
 
 
 def models_comparison_print(model_scores: list[tuple[str, list[float]]]) -> None:
@@ -288,6 +290,29 @@ def models_comparison_print(model_scores: list[tuple[str, list[float]]]) -> None
             f"{model_name}: R² médio={np.mean(scores):.4f}; "
             f"desvio-padrão={np.std(scores):.4f}"
         )
+
+
+def hyperparameter_comparison_print(
+    best_hyperparameters_by_dataset: dict[str, dict[str, Hyperparameters]],
+) -> None:
+    print("\n=== Sensibilidade dos hiperparâmetros a outliers ===")
+    print("Legenda: com outliers → sem outliers; = igual; ≠ diferente")
+    with_outliers = best_hyperparameters_by_dataset["Dados com outliers"]
+    without_outliers = best_hyperparameters_by_dataset["Dados sem outliers"]
+    for model_name, model_hyperparameters_with_outliers in with_outliers.items():
+        print(f"{model_name}:")
+        model_hyperparameters_without_outliers = without_outliers[model_name]
+        for hyperparameter_name, value_with_outliers in (
+            model_hyperparameters_with_outliers.items()
+        ):
+            value_without_outliers = model_hyperparameters_without_outliers[
+                hyperparameter_name
+            ]
+            symbol = "=" if value_with_outliers == value_without_outliers else "≠"
+            print(
+                f"  {hyperparameter_name}: {value_with_outliers} → "
+                f"{value_without_outliers} {symbol}"
+            )
 
 
 def main() -> None:
@@ -331,6 +356,7 @@ def main() -> None:
     print(f"Linhas utilizadas sem outliers: {dataset_without_outliers.height}")
 
     mean_scores_by_dataset: dict[str, dict[str, float]] = {}
+    best_hyperparameters_by_dataset: dict[str, dict[str, Hyperparameters]] = {}
     for dataset_name, evaluation_dataset in (
         ("Dados com outliers", dataset),
         ("Dados sem outliers", dataset_without_outliers),
@@ -348,8 +374,12 @@ def main() -> None:
             "ocean_proximity",
             drop_first=False,  # Use one-hot encoding for tree-based models
         ).lazy()
-        decision_tree_scores = decision_tree_train(tree_based_models_dataset_lazy)
-        random_forest_scores = random_forest_train(tree_based_models_dataset_lazy)
+        decision_tree_scores, decision_tree_best_hyperparameters = (
+            decision_tree_train(tree_based_models_dataset_lazy)
+        )
+        random_forest_scores, random_forest_best_hyperparameters = (
+            random_forest_train(tree_based_models_dataset_lazy)
+        )
         model_scores = [
             ("Regressão linear", linear_regression_scores),
             ("Árvore de decisão", decision_tree_scores),
@@ -358,6 +388,10 @@ def main() -> None:
         models_comparison_print(model_scores)
         mean_scores_by_dataset[dataset_name] = {
             model_name: float(np.mean(scores)) for model_name, scores in model_scores
+        }
+        best_hyperparameters_by_dataset[dataset_name] = {
+            "Árvore de decisão": decision_tree_best_hyperparameters,
+            "Floresta aleatória": random_forest_best_hyperparameters,
         }
 
     print("\n=== Sensibilidade a outliers ===")
@@ -372,6 +406,8 @@ def main() -> None:
             f"sem outliers={score_without_outliers:.4f}; "
             f"diferença={score_without_outliers - score_with_outliers:+.4f}"
         )
+
+    hyperparameter_comparison_print(best_hyperparameters_by_dataset)
 
 
 if __name__ == "__main__":
