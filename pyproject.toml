@@ -20,6 +20,7 @@ dependencies = [
 preset = "strict"
 python-version = "3.14"
 project-includes = ["ep2/**/*.py", "ep3/**/*.py", "utils.py"]
+min-severity = "info"
 
 [tool.ruff]
 target-version = "py314"
