@@ -10,7 +10,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
 from sklearn.model_selection import GridSearchCV, KFold, cross_validate
 from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeRegressor
 
 EP3_DIRECTORY_PATH: Final[Path] = Path(__file__).resolve().parent
@@ -129,7 +129,7 @@ def linear_regression_train(
                     [
                         (
                             "numeric",
-                            MinMaxScaler(),
+                            StandardScaler(),
                             LINEAR_REGRESSION_NUMERIC_FEATURE_INDICES,
                         )
                     ],
