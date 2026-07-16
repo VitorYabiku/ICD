@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Final
+from typing import Final, Literal
 
 import numpy as np
 import polars as pl
@@ -18,6 +18,9 @@ TREE_BASED_MODELS_RANDOM_STATE: Final[int] = 42
 DECISION_TREE_MAX_DEPTH_VALUES: Final = (None, 3, 5, 10, 20)
 DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES: Final = (2, 5, 10)
 DECISION_TREE_MIN_SAMPLES_LEAF_VALUES: Final = (1, 2, 4)
+RANDOM_FOREST_N_ESTIMATORS_VALUES: Final = (50, 100, 200)
+RANDOM_FOREST_MAX_DEPTH_VALUES: Final = (None, 5, 10, 20)
+RANDOM_FOREST_MAX_FEATURES_VALUES: Final = (1.0, "sqrt", "log2")
 
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
@@ -226,17 +229,70 @@ def random_forest_train(
             ~pl.col("fold").is_in([test_fold, validation_fold])
         ).drop("fold")
         test_lazy = dataset_lazy.filter(pl.col("fold") == test_fold).drop("fold")
-        # Reserved for hyperparameter tuning.
-        _validation_lazy = dataset_lazy.filter(pl.col("fold") == validation_fold).drop(
+        validation_lazy = dataset_lazy.filter(
+            pl.col("fold") == validation_fold
+        ).drop("fold")
+        final_train_lazy = dataset_lazy.filter(pl.col("fold") != test_fold).drop(
             "fold"
         )
 
         train = train_lazy.collect()
         train_y: np.ndarray = train.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
         train_X: np.ndarray = train.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+
+        validation = validation_lazy.collect()
+        validation_X: np.ndarray = validation.drop(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+        validation_y: np.ndarray = validation.get_column(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+
+        best_validation_score = -np.inf
+        best_n_estimators = 50
+        best_max_depth: int | None = None
+        best_max_features: float | Literal["sqrt", "log2"] = 1.0
+        for n_estimators in RANDOM_FOREST_N_ESTIMATORS_VALUES:
+            for max_depth in RANDOM_FOREST_MAX_DEPTH_VALUES:
+                for max_features in RANDOM_FOREST_MAX_FEATURES_VALUES:
+                    candidate_model = RandomForestRegressor(
+                        n_estimators=n_estimators,
+                        max_depth=max_depth,
+                        max_features=max_features,
+                        random_state=TREE_BASED_MODELS_RANDOM_STATE,
+                        n_jobs=-1,
+                    ).fit(train_X, train_y)
+                    validation_score = candidate_model.score(
+                        validation_X, validation_y
+                    )
+                    if validation_score > best_validation_score:
+                        best_validation_score = validation_score
+                        best_n_estimators = n_estimators
+                        best_max_depth = max_depth
+                        best_max_features = max_features
+
+        print(
+            f"Random forest fold {test_fold + 1} best hyperparameters: "
+            f"n_estimators={best_n_estimators}, "
+            f"max_depth={best_max_depth}, "
+            f"max_features={best_max_features}; "
+            f"validation R²: {best_validation_score}"
+        )
+
+        final_train = final_train_lazy.collect()
+        final_train_y: np.ndarray = final_train.get_column(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
+        final_train_X: np.ndarray = final_train.drop(
+            TARGET_VARIABLE_COLUMN_NAME
+        ).to_numpy()
         random_forest_model: Final = RandomForestRegressor(
-            random_state=TREE_BASED_MODELS_RANDOM_STATE
-        ).fit(train_X, train_y)
+            n_estimators=best_n_estimators,
+            max_depth=best_max_depth,
+            max_features=best_max_features,
+            random_state=TREE_BASED_MODELS_RANDOM_STATE,
+            n_jobs=-1,
+        ).fit(final_train_X, final_train_y)
 
         test = test_lazy.collect()
         test_X: np.ndarray = test.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
