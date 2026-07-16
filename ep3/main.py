@@ -17,7 +17,7 @@ PROJECT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH.parent
 DATASET_DIRECTORY_PATH: Final[Path] = PROJECT_DIRECTORY_PATH / "dataset"
 DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing.csv"
 
-CROSS_VALIDATION_FOLD_COUNT: Final[int] = 5
+CROSS_VALIDATION_FOLD_COUNT: Final[int] = 10
 RANDOM_STATE: Final[int] = 42
 CROSS_VALIDATION_SCORING: Final[str] = "r2"
 GRID_SEARCH_N_JOBS: Final[int] = -1
@@ -28,6 +28,7 @@ DECISION_TREE_MIN_SAMPLES_LEAF_VALUES: Final = (1, 2, 4)
 RANDOM_FOREST_N_ESTIMATORS_VALUES: Final = (50, 100, 200, 400)
 RANDOM_FOREST_MAX_DEPTH_VALUES: Final = (None, 5, 10, 20)
 RANDOM_FOREST_MAX_FEATURES_VALUES: Final = (1.0, "sqrt", "log2")
+OUTLIER_INTERQUARTILE_RANGE_FACTOR: Final[float] = 1.5
 DECISION_TREE_PARAM_GRID: Final = {
     "max_depth": DECISION_TREE_MAX_DEPTH_VALUES,
     "min_samples_split": DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES,
@@ -71,6 +72,27 @@ ROW_WITH_NULL_OR_NAN_EXPR: Final[pl.Expr] = pl.any_horizontal(
 ) | pl.any_horizontal(cs.float().is_nan())
 
 
+def outlier_expr(column_name: str) -> pl.Expr:
+    first_quartile = pl.col(column_name).quantile(0.25)
+    third_quartile = pl.col(column_name).quantile(0.75)
+    interquartile_range = third_quartile - first_quartile
+    return (
+        pl.col(column_name)
+        < first_quartile - OUTLIER_INTERQUARTILE_RANGE_FACTOR * interquartile_range
+    ) | (
+        pl.col(column_name)
+        > third_quartile + OUTLIER_INTERQUARTILE_RANGE_FACTOR * interquartile_range
+    )
+
+
+ROW_WITH_OUTLIER_EXPR: Final[pl.Expr] = pl.any_horizontal(
+    *[
+        outlier_expr(column_name)
+        for column_name in (TARGET_VARIABLE_COLUMN_NAME, *NUMERIC_FEATURE_COLUMN_NAMES)
+    ]
+)
+
+
 def features_and_target_get(dataset: pl.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     target = dataset.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
     features = dataset.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
@@ -79,6 +101,10 @@ def features_and_target_get(dataset: pl.DataFrame) -> tuple[np.ndarray, np.ndarr
 
 def model_evaluation_print(model_name: str, scores: list[float]) -> None:
     print(f"\n--- Avaliação: {model_name} ---")
+    print(
+        "\nOs R² externos abaixo pertencem à melhor combinação de cada fold "
+        "externa, não a uma única combinação geral."
+    )
     for fold, score in enumerate(scores, start=1):
         print(f"Fold {fold}: R² = {score:.4f}")
     print(f"R² médio: {np.mean(scores):.4f}")
@@ -134,6 +160,9 @@ def decision_tree_train(
     print("\n=== Árvore de decisão ===")
     print("--- Treinamento e seleção de hiperparâmetros: Árvore de decisão ---")
     scores: list[float] = []
+    candidate_mean_scores_by_fold: list[np.ndarray] = []
+    best_candidate_indices: list[int] = []
+    candidate_params: np.ndarray = np.array([], dtype=object)
     for fold, (train_indices, test_indices) in enumerate(
         OUTER_CROSS_VALIDATION.split(features), start=1
     ):
@@ -146,6 +175,9 @@ def decision_tree_train(
             n_jobs=GRID_SEARCH_N_JOBS,
         )
         search.fit(features[train_indices], target[train_indices])
+        candidate_mean_scores_by_fold.append(search.cv_results_["mean_test_score"])
+        best_candidate_indices.append(search.best_index_)
+        candidate_params = np.asarray(search.cv_results_["params"], dtype=object)
         best_params = search.best_params_
         score = float(search.score(features[test_indices], target[test_indices]))
         scores.append(score)
@@ -158,7 +190,28 @@ def decision_tree_train(
             f"R² externo={score:.4f}"
         )
 
+    overall_candidate_mean_scores = np.mean(candidate_mean_scores_by_fold, axis=0)
+    overall_best_candidate_index = int(np.argmax(overall_candidate_mean_scores))
+    overall_best_params = candidate_params[overall_best_candidate_index]
+    overall_best_folds = ", ".join(
+        str(fold)
+        for fold, best_candidate_index in enumerate(best_candidate_indices, start=1)
+        if best_candidate_index == overall_best_candidate_index
+    )
+    print(
+        "\nOs R² externos abaixo pertencem à melhor combinação de cada fold "
+        "externa, não a uma única combinação geral."
+    )
     model_evaluation_print("Árvore de decisão", scores)
+    print(
+        "Melhor combinação geral por R² médio interno: "
+        f"max_depth={overall_best_params['max_depth']}, "
+        f"min_samples_split={overall_best_params['min_samples_split']}, "
+        f"min_samples_leaf={overall_best_params['min_samples_leaf']}; "
+        "R² médio interno entre folds externas="
+        f"{overall_candidate_mean_scores[overall_best_candidate_index]:.4f}; "
+        f"melhor nas folds externas: {overall_best_folds or 'nenhuma'}"
+    )
 
     return scores
 
@@ -171,6 +224,9 @@ def random_forest_train(
     print("\n=== Floresta aleatória ===")
     print("--- Treinamento e seleção de hiperparâmetros: Floresta aleatória ---")
     scores: list[float] = []
+    candidate_mean_scores_by_fold: list[np.ndarray] = []
+    best_candidate_indices: list[int] = []
+    candidate_params: np.ndarray = np.array([], dtype=object)
     for fold, (train_indices, test_indices) in enumerate(
         OUTER_CROSS_VALIDATION.split(features), start=1
     ):
@@ -186,6 +242,9 @@ def random_forest_train(
             n_jobs=GRID_SEARCH_N_JOBS,
         )
         search.fit(features[train_indices], target[train_indices])
+        candidate_mean_scores_by_fold.append(search.cv_results_["mean_test_score"])
+        best_candidate_indices.append(search.best_index_)
+        candidate_params = np.asarray(search.cv_results_["params"], dtype=object)
         best_params = search.best_params_
         score = float(search.score(features[test_indices], target[test_indices]))
         scores.append(score)
@@ -198,7 +257,24 @@ def random_forest_train(
             f"R² externo={score:.4f}"
         )
 
+    overall_candidate_mean_scores = np.mean(candidate_mean_scores_by_fold, axis=0)
+    overall_best_candidate_index = int(np.argmax(overall_candidate_mean_scores))
+    overall_best_params = candidate_params[overall_best_candidate_index]
+    overall_best_folds = ", ".join(
+        str(fold)
+        for fold, best_candidate_index in enumerate(best_candidate_indices, start=1)
+        if best_candidate_index == overall_best_candidate_index
+    )
     model_evaluation_print("Floresta aleatória", scores)
+    print(
+        "Melhor combinação geral por R² médio interno: "
+        f"n_estimators={overall_best_params['n_estimators']}, "
+        f"max_depth={overall_best_params['max_depth']}, "
+        f"max_features={overall_best_params['max_features']}; "
+        "R² médio interno entre folds externas="
+        f"{overall_candidate_mean_scores[overall_best_candidate_index]:.4f}; "
+        f"melhor nas folds externas: {overall_best_folds or 'nenhuma'}"
+    )
 
     return scores
 
@@ -246,25 +322,56 @@ def main() -> None:
         )
         .collect()
     )
-    linear_regression_dataset_lazy = dataset.to_dummies(
-        "ocean_proximity",
-        drop_first=True,  # Use dummy variables for linear regression
-    ).lazy()
-    linear_regression_scores = linear_regression_train(linear_regression_dataset_lazy)
+    dataset_without_outliers = dataset.filter(~ROW_WITH_OUTLIER_EXPR)
+    outlier_row_count = dataset.height - dataset_without_outliers.height
+    print(
+        "Linhas removidas por um ou mais outliers: "
+        f"{outlier_row_count} ({outlier_row_count / dataset.height:.2%})"
+    )
+    print(f"Linhas utilizadas sem outliers: {dataset_without_outliers.height}")
 
-    tree_based_models_dataset_lazy = dataset.to_dummies(
-        "ocean_proximity",
-        drop_first=False,  # Use one-hot encoding for tree-based models
-    ).lazy()
-    decision_tree_scores = decision_tree_train(tree_based_models_dataset_lazy)
-    random_forest_scores = random_forest_train(tree_based_models_dataset_lazy)
-    models_comparison_print(
-        [
+    mean_scores_by_dataset: dict[str, dict[str, float]] = {}
+    for dataset_name, evaluation_dataset in (
+        ("Dados com outliers", dataset),
+        ("Dados sem outliers", dataset_without_outliers),
+    ):
+        print(f"\n\n######## {dataset_name} ########")
+        linear_regression_dataset_lazy = evaluation_dataset.to_dummies(
+            "ocean_proximity",
+            drop_first=True,  # Use dummy variables for linear regression
+        ).lazy()
+        linear_regression_scores = linear_regression_train(
+            linear_regression_dataset_lazy
+        )
+
+        tree_based_models_dataset_lazy = evaluation_dataset.to_dummies(
+            "ocean_proximity",
+            drop_first=False,  # Use one-hot encoding for tree-based models
+        ).lazy()
+        decision_tree_scores = decision_tree_train(tree_based_models_dataset_lazy)
+        random_forest_scores = random_forest_train(tree_based_models_dataset_lazy)
+        model_scores = [
             ("Regressão linear", linear_regression_scores),
             ("Árvore de decisão", decision_tree_scores),
             ("Floresta aleatória", random_forest_scores),
         ]
-    )
+        models_comparison_print(model_scores)
+        mean_scores_by_dataset[dataset_name] = {
+            model_name: float(np.mean(scores)) for model_name, scores in model_scores
+        }
+
+    print("\n=== Sensibilidade a outliers ===")
+    for model_name, score_with_outliers in mean_scores_by_dataset[
+        "Dados com outliers"
+    ].items():
+        score_without_outliers = mean_scores_by_dataset["Dados sem outliers"][
+            model_name
+        ]
+        print(
+            f"{model_name}: R² médio com outliers={score_with_outliers:.4f}; "
+            f"sem outliers={score_without_outliers:.4f}; "
+            f"diferença={score_without_outliers - score_with_outliers:+.4f}"
+        )
 
 
 if __name__ == "__main__":
