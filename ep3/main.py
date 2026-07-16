@@ -45,6 +45,9 @@ type Hyperparameters = dict[str, object]
 type EvaluationScores = dict[str, list[float]]
 
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
+TARGET_VARIABLE_MEASUREMENT_UNIT: Final = (
+    "dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000"
+)
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
     "rooms_per_household",
     "bedrooms_per_room",
@@ -103,19 +106,32 @@ def features_and_target_get(dataset: pl.DataFrame) -> tuple[np.ndarray, np.ndarr
     return features, target
 
 
-def model_evaluation_print(model_name: str, scores: EvaluationScores) -> None:
+def error_score_format(score: float, target_mean: float) -> str:
+    return f"{score:.4f} ({score / target_mean:.2%} da média do alvo)"
+
+
+def model_evaluation_print(
+    model_name: str, scores: EvaluationScores, target_mean: float
+) -> None:
     print(f"\n--- Avaliação: {model_name} ---")
     print("\nAs métricas externas abaixo foram calculadas em cada fold externa.")
     for fold, (r2, rmse, mae) in enumerate(
         zip(scores["r2"], scores["rmse"], scores["mae"], strict=True), start=1
     ):
-        print(f"Fold {fold}: R² = {r2:.4f}; RMSE = {rmse:.4f}; MAE = {mae:.4f}")
-    for metric, label in (("r2", "R²"), ("rmse", "RMSE"), ("mae", "MAE")):
-        print(f"{label} médio: {np.mean(scores[metric]):.4f}")
+        print(
+            f"Fold {fold}: R² = {r2:.4f}; "
+            f"RMSE = {error_score_format(rmse, target_mean)}; "
+            f"MAE = {error_score_format(mae, target_mean)}"
+        )
+    print(f"R² médio: {np.mean(scores['r2']):.4f}")
+    for metric, label in (("rmse", "RMSE"), ("mae", "MAE")):
+        mean_score = float(np.mean(scores[metric]))
+        print(f"{label} médio: {error_score_format(mean_score, target_mean)}")
 
 
 def linear_regression_train(
     dataset_lazy: pl.LazyFrame,
+    target_mean: float,
 ) -> EvaluationScores:
     print("\n=== Regressão linear ===")
     print("--- Treinamento: Regressão linear ---")
@@ -158,13 +174,14 @@ def linear_regression_train(
         ],
     }
 
-    model_evaluation_print("Regressão linear", scores)
+    model_evaluation_print("Regressão linear", scores, target_mean)
 
     return scores
 
 
 def decision_tree_train(
     dataset_lazy: pl.LazyFrame,
+    target_mean: float,
 ) -> tuple[EvaluationScores, Hyperparameters]:
     dataset = dataset_lazy.collect()
     features, target = features_and_target_get(dataset)
@@ -204,8 +221,8 @@ def decision_tree_train(
             f"min_samples_leaf={best_params['min_samples_leaf']}; "
             f"R² médio interno={search.best_score_:.4f}; "
             f"R² externo={r2:.4f}; "
-            f"RMSE externo={rmse:.4f}; "
-            f"MAE externo={mae:.4f}"
+            f"RMSE externo={error_score_format(rmse, target_mean)}; "
+            f"MAE externo={error_score_format(mae, target_mean)}"
         )
 
     overall_candidate_mean_scores = np.mean(candidate_mean_scores_by_fold, axis=0)
@@ -220,7 +237,7 @@ def decision_tree_train(
         "\nOs R² externos abaixo pertencem à melhor combinação de cada fold "
         "externa, não a uma única combinação geral."
     )
-    model_evaluation_print("Árvore de decisão", scores)
+    model_evaluation_print("Árvore de decisão", scores, target_mean)
     print(
         "Melhor combinação geral por R² médio interno: "
         f"max_depth={overall_best_params['max_depth']}, "
@@ -236,6 +253,7 @@ def decision_tree_train(
 
 def random_forest_train(
     dataset_lazy: pl.LazyFrame,
+    target_mean: float,
 ) -> tuple[EvaluationScores, Hyperparameters]:
     dataset = dataset_lazy.collect()
     features, target = features_and_target_get(dataset)
@@ -278,8 +296,8 @@ def random_forest_train(
             f"max_features={best_params['max_features']}; "
             f"R² médio interno={search.best_score_:.4f}; "
             f"R² externo={r2:.4f}; "
-            f"RMSE externo={rmse:.4f}; "
-            f"MAE externo={mae:.4f}"
+            f"RMSE externo={error_score_format(rmse, target_mean)}; "
+            f"MAE externo={error_score_format(mae, target_mean)}"
         )
 
     overall_candidate_mean_scores = np.mean(candidate_mean_scores_by_fold, axis=0)
@@ -290,7 +308,7 @@ def random_forest_train(
         for fold, best_candidate_index in enumerate(best_candidate_indices, start=1)
         if best_candidate_index == overall_best_candidate_index
     )
-    model_evaluation_print("Floresta aleatória", scores)
+    model_evaluation_print("Floresta aleatória", scores, target_mean)
     print(
         "Melhor combinação geral por R² médio interno: "
         f"n_estimators={overall_best_params['n_estimators']}, "
@@ -306,16 +324,19 @@ def random_forest_train(
 
 def models_comparison_print(
     model_scores: list[tuple[str, EvaluationScores]],
+    target_mean: float,
 ) -> None:
     print("\n=== Comparação final ===")
     for model_name, scores in sorted(
         model_scores, key=lambda item: np.mean(item[1]["r2"]), reverse=True
     ):
+        mean_rmse = float(np.mean(scores["rmse"]))
+        mean_mae = float(np.mean(scores["mae"]))
         print(
             f"{model_name}: "
             f"R² médio={np.mean(scores['r2']):.4f}; "
-            f"RMSE médio={np.mean(scores['rmse']):.4f}; "
-            f"MAE médio={np.mean(scores['mae']):.4f}"
+            f"RMSE médio={error_score_format(mean_rmse, target_mean)}; "
+            f"MAE médio={error_score_format(mean_mae, target_mean)}"
         )
 
 
@@ -384,18 +405,29 @@ def main() -> None:
     print(f"Linhas utilizadas sem outliers: {dataset_without_outliers.height}")
 
     mean_scores_by_dataset: dict[str, dict[str, dict[str, float]]] = {}
+    target_means_by_dataset: dict[str, float] = {}
     best_hyperparameters_by_dataset: dict[str, dict[str, Hyperparameters]] = {}
     for dataset_name, evaluation_dataset in (
         ("Dados com outliers", dataset),
         ("Dados sem outliers", dataset_without_outliers),
     ):
         print(f"\n\n######## {dataset_name} ########")
+        target = evaluation_dataset.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
+        target_mean = float(np.mean(target))
+        target_means_by_dataset[dataset_name] = target_mean
+        print(
+            f"Escala de {TARGET_VARIABLE_COLUMN_NAME} "
+            f"({TARGET_VARIABLE_MEASUREMENT_UNIT}): "
+            f"mínimo={np.min(target):.4f}; média={target_mean:.4f}; "
+            f"máximo={np.max(target):.4f}"
+        )
+        print("RMSE e MAE estão na mesma unidade do alvo.")
         linear_regression_dataset_lazy = evaluation_dataset.to_dummies(
             "ocean_proximity",
             drop_first=True,  # Use dummy variables for linear regression
         ).lazy()
         linear_regression_scores = linear_regression_train(
-            linear_regression_dataset_lazy
+            linear_regression_dataset_lazy, target_mean
         )
 
         tree_based_models_dataset_lazy = evaluation_dataset.to_dummies(
@@ -403,17 +435,17 @@ def main() -> None:
             drop_first=False,  # Use one-hot encoding for tree-based models
         ).lazy()
         decision_tree_scores, decision_tree_best_hyperparameters = decision_tree_train(
-            tree_based_models_dataset_lazy
+            tree_based_models_dataset_lazy, target_mean
         )
         random_forest_scores, random_forest_best_hyperparameters = random_forest_train(
-            tree_based_models_dataset_lazy
+            tree_based_models_dataset_lazy, target_mean
         )
         model_scores = [
             ("Regressão linear", linear_regression_scores),
             ("Árvore de decisão", decision_tree_scores),
             ("Floresta aleatória", random_forest_scores),
         ]
-        models_comparison_print(model_scores)
+        models_comparison_print(model_scores, target_mean)
         mean_scores_by_dataset[dataset_name] = {
             model_name: {
                 metric: float(np.mean(metric_scores))
@@ -437,9 +469,21 @@ def main() -> None:
         for metric, label in (("r2", "R²"), ("rmse", "RMSE"), ("mae", "MAE")):
             score_with_outliers = scores_with_outliers[metric]
             score_without_outliers = scores_without_outliers[metric]
+            if metric == "r2":
+                score_with_outliers_display = f"{score_with_outliers:.4f}"
+                score_without_outliers_display = f"{score_without_outliers:.4f}"
+            else:
+                score_with_outliers_display = error_score_format(
+                    score_with_outliers,
+                    target_means_by_dataset["Dados com outliers"],
+                )
+                score_without_outliers_display = error_score_format(
+                    score_without_outliers,
+                    target_means_by_dataset["Dados sem outliers"],
+                )
             print(
-                f"  {label} médio com outliers={score_with_outliers:.4f}; "
-                f"sem outliers={score_without_outliers:.4f}; "
+                f"  {label} médio com outliers={score_with_outliers_display}; "
+                f"sem outliers={score_without_outliers_display}; "
                 f"diferença={score_without_outliers - score_with_outliers:+.4f}"
             )
 
