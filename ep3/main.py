@@ -8,7 +8,7 @@ from sklearn.compose import ColumnTransformer
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_absolute_error, root_mean_squared_error
-from sklearn.model_selection import GridSearchCV, KFold, cross_validate
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, cross_validate
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeRegressor
@@ -16,7 +16,7 @@ from sklearn.tree import DecisionTreeRegressor
 EP3_DIRECTORY_PATH: Final[Path] = Path(__file__).resolve().parent
 PROJECT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH.parent
 DATASET_DIRECTORY_PATH: Final[Path] = PROJECT_DIRECTORY_PATH / "dataset"
-DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing.csv"
+DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing_stratified.csv"
 
 CROSS_VALIDATION_FOLD_COUNT: Final[int] = 10
 RANDOM_STATE: Final[int] = 42
@@ -45,6 +45,7 @@ type Hyperparameters = dict[str, object]
 type EvaluationScores = dict[str, list[float]]
 
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
+CLUSTER_COLUMN_NAME: Final = "cluster"
 TARGET_VARIABLE_MEASUREMENT_UNIT: Final = (
     "dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000"
 )
@@ -63,12 +64,12 @@ OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: Final = (
 LINEAR_REGRESSION_NUMERIC_FEATURE_INDICES: Final = tuple(
     range(len(NUMERIC_FEATURE_COLUMN_NAMES))
 )
-INNER_CROSS_VALIDATION: Final = KFold(
+INNER_CROSS_VALIDATION: Final = StratifiedKFold(
     n_splits=CROSS_VALIDATION_FOLD_COUNT,
     shuffle=True,
     random_state=RANDOM_STATE,
 )
-OUTER_CROSS_VALIDATION: Final = KFold(
+OUTER_CROSS_VALIDATION: Final = StratifiedKFold(
     n_splits=CROSS_VALIDATION_FOLD_COUNT,
     shuffle=True,
     random_state=RANDOM_STATE,
@@ -100,10 +101,13 @@ ROW_WITH_OUTLIER_EXPR: Final[pl.Expr] = pl.any_horizontal(
 )
 
 
-def features_and_target_get(dataset: pl.DataFrame) -> tuple[np.ndarray, np.ndarray]:
+def features_target_and_clusters_get(
+    dataset: pl.DataFrame,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     target = dataset.get_column(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
-    features = dataset.drop(TARGET_VARIABLE_COLUMN_NAME).to_numpy()
-    return features, target
+    clusters = dataset.get_column(CLUSTER_COLUMN_NAME).to_numpy()
+    features = dataset.drop(TARGET_VARIABLE_COLUMN_NAME, CLUSTER_COLUMN_NAME).to_numpy()
+    return features, target, clusters
 
 
 def error_score_format(score: float, target_mean: float) -> str:
@@ -136,7 +140,7 @@ def linear_regression_train(
     print("\n=== Regressão linear ===")
     print("--- Treinamento: Regressão linear ---")
     dataset = dataset_lazy.collect()
-    features, target = features_and_target_get(dataset)
+    features, target, clusters = features_target_and_clusters_get(dataset)
     model: Final = Pipeline(
         [
             (
@@ -159,7 +163,7 @@ def linear_regression_train(
         model,
         features,
         target,
-        cv=OUTER_CROSS_VALIDATION,
+        cv=OUTER_CROSS_VALIDATION.split(features, clusters),
         scoring=("r2", "neg_root_mean_squared_error", "neg_mean_absolute_error"),
     )
     scores: EvaluationScores = {
@@ -184,7 +188,7 @@ def decision_tree_train(
     target_mean: float,
 ) -> tuple[EvaluationScores, Hyperparameters]:
     dataset = dataset_lazy.collect()
-    features, target = features_and_target_get(dataset)
+    features, target, clusters = features_target_and_clusters_get(dataset)
     print("\n=== Árvore de decisão ===")
     print("--- Treinamento e seleção de hiperparâmetros: Árvore de decisão ---")
     scores: EvaluationScores = {"r2": [], "rmse": [], "mae": []}
@@ -192,13 +196,15 @@ def decision_tree_train(
     best_candidate_indices: list[int] = []
     candidate_params: np.ndarray = np.array([], dtype=object)
     for fold, (train_indices, test_indices) in enumerate(
-        OUTER_CROSS_VALIDATION.split(features), start=1
+        OUTER_CROSS_VALIDATION.split(features, clusters), start=1
     ):
         print(f"Processando fold externa {fold}/{CROSS_VALIDATION_FOLD_COUNT}...")
         search = GridSearchCV(
             DecisionTreeRegressor(random_state=RANDOM_STATE),
             DECISION_TREE_PARAM_GRID,
-            cv=INNER_CROSS_VALIDATION,
+            cv=INNER_CROSS_VALIDATION.split(
+                features[train_indices], clusters[train_indices]
+            ),
             scoring=CROSS_VALIDATION_SCORING,
             n_jobs=GRID_SEARCH_N_JOBS,
         )
@@ -256,7 +262,7 @@ def random_forest_train(
     target_mean: float,
 ) -> tuple[EvaluationScores, Hyperparameters]:
     dataset = dataset_lazy.collect()
-    features, target = features_and_target_get(dataset)
+    features, target, clusters = features_target_and_clusters_get(dataset)
     print("\n=== Floresta aleatória ===")
     print("--- Treinamento e seleção de hiperparâmetros: Floresta aleatória ---")
     scores: EvaluationScores = {"r2": [], "rmse": [], "mae": []}
@@ -264,7 +270,7 @@ def random_forest_train(
     best_candidate_indices: list[int] = []
     candidate_params: np.ndarray = np.array([], dtype=object)
     for fold, (train_indices, test_indices) in enumerate(
-        OUTER_CROSS_VALIDATION.split(features), start=1
+        OUTER_CROSS_VALIDATION.split(features, clusters), start=1
     ):
         print(f"Processando fold externa {fold}/{CROSS_VALIDATION_FOLD_COUNT}...")
         search = GridSearchCV(
@@ -273,7 +279,9 @@ def random_forest_train(
                 n_jobs=RANDOM_FOREST_N_JOBS,
             ),
             RANDOM_FOREST_PARAM_GRID,
-            cv=INNER_CROSS_VALIDATION,
+            cv=INNER_CROSS_VALIDATION.split(
+                features[train_indices], clusters[train_indices]
+            ),
             scoring=CROSS_VALIDATION_SCORING,
             n_jobs=GRID_SEARCH_N_JOBS,
         )
@@ -393,6 +401,7 @@ def main() -> None:
                 "population_per_household"
             ),
             "ocean_proximity",
+            CLUSTER_COLUMN_NAME,
         )
         .collect()
     )
