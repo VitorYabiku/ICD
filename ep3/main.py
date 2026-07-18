@@ -93,6 +93,9 @@ def evaluation_result_get(
         "folds": folds,
         "medias": {
             "r2": float(np.mean(scores["r2"])),
+            "tempo_de_treinamento_segundos": float(
+                np.mean(scores["tempo_de_treinamento_segundos"])
+            ),
             "rmse": {
                 "valor": mean_rmse,
                 "proporcao_media_alvo": mean_rmse / target_mean,
@@ -124,6 +127,10 @@ def model_evaluation_print(
                 f"MAE = {error_score_format(mae, target_mean)}"
             )
     print(f"R² médio: {np.mean(scores['r2']):.4f}")
+    print(
+        "Tempo médio de treinamento: "
+        f"{np.mean(scores['tempo_de_treinamento_segundos']):.4f} s"
+    )
     for metric, label in (("rmse", "RMSE"), ("mae", "MAE")):
         mean_score = float(np.mean(scores[metric]))
         print(f"{label} médio: {error_score_format(mean_score, target_mean)}")
@@ -252,6 +259,9 @@ def linear_regression_train(
     )
     scores: EvaluationScores = {
         "r2": [float(score) for score in cross_validation_results["test_r2"]],
+        "tempo_de_treinamento_segundos": [
+            float(time) for time in cross_validation_results["fit_time"]
+        ],
         "rmse": [
             -float(score)
             for score in cross_validation_results["test_neg_root_mean_squared_error"]
@@ -282,7 +292,12 @@ def decision_tree_train(
     features, target, clusters = features_target_and_clusters_get(dataset)
     print("\n=== Árvore de decisão ===")
     print("--- Treinamento e seleção de hiperparâmetros: Árvore de decisão ---")
-    scores: EvaluationScores = {"r2": [], "rmse": [], "mae": []}
+    scores: EvaluationScores = {
+        "r2": [],
+        "tempo_de_treinamento_segundos": [],
+        "rmse": [],
+        "mae": [],
+    }
     candidate_mean_scores_by_fold: list[np.ndarray] = []
     selection_by_fold: list[dict[str, object]] = []
     models: list[TrainedModel] = []
@@ -311,6 +326,7 @@ def decision_tree_train(
             n_jobs=GRID_SEARCH_N_JOBS,
         )
         search.fit(features[train_indices], target[train_indices])
+        scores["tempo_de_treinamento_segundos"].append(search.refit_time_)
         candidate_mean_scores_by_fold.append(search.cv_results_["mean_test_score"])
         candidate_params = np.asarray(search.cv_results_["params"], dtype=object)
         best_params = search.best_params_
@@ -384,7 +400,12 @@ def random_forest_train(
     features, target, clusters = features_target_and_clusters_get(dataset)
     print("\n=== Floresta aleatória ===")
     print("--- Treinamento e seleção de hiperparâmetros: Floresta aleatória ---")
-    scores: EvaluationScores = {"r2": [], "rmse": [], "mae": []}
+    scores: EvaluationScores = {
+        "r2": [],
+        "tempo_de_treinamento_segundos": [],
+        "rmse": [],
+        "mae": [],
+    }
     candidate_mean_scores_by_fold: list[np.ndarray] = []
     selection_by_fold: list[dict[str, object]] = []
     models: list[TrainedModel] = []
@@ -417,6 +438,7 @@ def random_forest_train(
             n_jobs=GRID_SEARCH_N_JOBS,
         )
         search.fit(features[train_indices], target[train_indices])
+        scores["tempo_de_treinamento_segundos"].append(search.refit_time_)
         candidate_mean_scores_by_fold.append(search.cv_results_["mean_test_score"])
         candidate_params = np.asarray(search.cv_results_["params"], dtype=object)
         best_params = search.best_params_
