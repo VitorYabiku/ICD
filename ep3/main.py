@@ -704,8 +704,7 @@ def main() -> None:
             name: {
                 "com_outliers": value_with_outliers,
                 "sem_outliers": hyperparameters_without_outliers[name],
-                "igual": value_with_outliers
-                == hyperparameters_without_outliers[name],
+                "igual": value_with_outliers == hyperparameters_without_outliers[name],
             }
             for name, value_with_outliers in hyperparameters_with_outliers.items()
         }
