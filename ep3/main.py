@@ -16,35 +16,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeRegressor
 
 EP3_DIRECTORY_PATH: Final[Path] = Path(__file__).resolve().parent
-PROJECT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH.parent
-DATASET_DIRECTORY_PATH: Final[Path] = PROJECT_DIRECTORY_PATH / "dataset"
-DATASET_PATH: Final[Path] = DATASET_DIRECTORY_PATH / "housing_stratified.csv"
-OUTPUT_DIRECTORY_PATH: Final[Path] = EP3_DIRECTORY_PATH / "output"
-OUTPUT_PATH: Final[Path] = OUTPUT_DIRECTORY_PATH / "resultados.json"
-MODEL_OUTPUT_DIRECTORY_PATH: Final[Path] = OUTPUT_DIRECTORY_PATH / "modelos"
 
 CROSS_VALIDATION_FOLD_COUNT: Final[int] = 10
 RANDOM_STATE: Final[int] = 42
 CROSS_VALIDATION_SCORING: Final[str] = "r2"
 GRID_SEARCH_N_JOBS: Final[int] = -1
-RANDOM_FOREST_N_JOBS: Final[int] = 1
-DECISION_TREE_MAX_DEPTH_VALUES: Final = (None, 3, 5, 10, 20)
-DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES: Final = (2, 5, 10)
-DECISION_TREE_MIN_SAMPLES_LEAF_VALUES: Final = (1, 2, 4)
-RANDOM_FOREST_N_ESTIMATORS_VALUES: Final = (50, 100, 200, 400)
-RANDOM_FOREST_MAX_DEPTH_VALUES: Final = (None, 5, 10, 20)
-RANDOM_FOREST_MAX_FEATURES_VALUES: Final = (1.0, "sqrt", "log2")
-OUTLIER_INTERQUARTILE_RANGE_FACTOR: Final[float] = 1.5
-DECISION_TREE_PARAM_GRID: Final = {
-    "max_depth": DECISION_TREE_MAX_DEPTH_VALUES,
-    "min_samples_split": DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES,
-    "min_samples_leaf": DECISION_TREE_MIN_SAMPLES_LEAF_VALUES,
-}
-RANDOM_FOREST_PARAM_GRID: Final = {
-    "n_estimators": RANDOM_FOREST_N_ESTIMATORS_VALUES,
-    "max_depth": RANDOM_FOREST_MAX_DEPTH_VALUES,
-    "max_features": RANDOM_FOREST_MAX_FEATURES_VALUES,
-}
 type Hyperparameters = dict[str, object]
 type EvaluationScores = dict[str, list[float]]
 type HyperparameterSelection = dict[str, object]
@@ -53,23 +29,10 @@ type FeatureImportance = dict[str, object]
 
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
 CLUSTER_COLUMN_NAME: Final = "cluster"
-TARGET_VARIABLE_MEASUREMENT_UNIT: Final = (
-    "dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000"
-)
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
     "rooms_per_household",
     "bedrooms_per_room",
     "population_per_household",
-)
-OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: Final = (
-    "ISLAND",
-    "NEAR OCEAN",
-    "NEAR BAY",
-    "<1H OCEAN",
-    "INLAND",
-)
-LINEAR_REGRESSION_NUMERIC_FEATURE_INDICES: Final = tuple(
-    range(len(NUMERIC_FEATURE_COLUMN_NAMES))
 )
 INNER_CROSS_VALIDATION: Final = StratifiedKFold(
     n_splits=CROSS_VALIDATION_FOLD_COUNT,
@@ -82,15 +45,12 @@ OUTER_CROSS_VALIDATION: Final = StratifiedKFold(
     random_state=RANDOM_STATE,
 )
 
-ROW_WITH_NULL_OR_NAN_EXPR: Final[pl.Expr] = pl.any_horizontal(
-    pl.all().is_null()
-) | pl.any_horizontal(cs.float().is_nan())
-
 
 def outlier_expr(column_name: str) -> pl.Expr:
     first_quartile = pl.col(column_name).quantile(0.25)
     third_quartile = pl.col(column_name).quantile(0.75)
     interquartile_range = third_quartile - first_quartile
+    OUTLIER_INTERQUARTILE_RANGE_FACTOR: Final = 1.5
     return (
         pl.col(column_name)
         < first_quartile - OUTLIER_INTERQUARTILE_RANGE_FACTOR * interquartile_range
@@ -98,14 +58,6 @@ def outlier_expr(column_name: str) -> pl.Expr:
         pl.col(column_name)
         > third_quartile + OUTLIER_INTERQUARTILE_RANGE_FACTOR * interquartile_range
     )
-
-
-ROW_WITH_OUTLIER_EXPR: Final[pl.Expr] = pl.any_horizontal(
-    *[
-        outlier_expr(column_name)
-        for column_name in (TARGET_VARIABLE_COLUMN_NAME, *NUMERIC_FEATURE_COLUMN_NAMES)
-    ]
-)
 
 
 def features_target_and_clusters_get(
@@ -230,9 +182,7 @@ def feature_importance_print(
         for feature in cast(list[dict[str, object]], fold["features"]):
             print(f"  {feature['feature']}: {feature['importancia']:.6f}")
     print("Média geral:")
-    for feature in cast(
-        list[dict[str, object]], feature_importance["media_geral"]
-    ):
+    for feature in cast(list[dict[str, object]], feature_importance["media_geral"]):
         print(f"  {feature['feature']}: {feature['importancia']:.6f}")
 
 
@@ -243,6 +193,7 @@ def model_bundle_save(
     feature_names: list[str],
     models: list[TrainedModel],
 ) -> Path:
+    MODEL_OUTPUT_DIRECTORY_PATH: Final = EP3_DIRECTORY_PATH / "output" / "modelos"
     MODEL_OUTPUT_DIRECTORY_PATH.mkdir(parents=True, exist_ok=True)
     output_path = MODEL_OUTPUT_DIRECTORY_PATH / f"{dataset_key}.joblib"
     temporary_output_path = output_path.with_suffix(".joblib.tmp")
@@ -270,6 +221,9 @@ def linear_regression_train(
     print("--- Treinamento: Regressão linear ---")
     dataset = dataset_lazy.collect()
     features, target, clusters = features_target_and_clusters_get(dataset)
+    LINEAR_REGRESSION_NUMERIC_FEATURE_INDICES: Final = tuple(
+        range(len(NUMERIC_FEATURE_COLUMN_NAMES))
+    )
     model: Final = Pipeline(
         [
             (
@@ -311,8 +265,7 @@ def linear_regression_train(
     model_evaluation_print("Regressão linear", scores, target_mean)
 
     return scores, [
-        cast(Pipeline, estimator)
-        for estimator in cross_validation_results["estimator"]
+        cast(Pipeline, estimator) for estimator in cross_validation_results["estimator"]
     ]
 
 
@@ -334,6 +287,14 @@ def decision_tree_train(
     selection_by_fold: list[dict[str, object]] = []
     models: list[TrainedModel] = []
     candidate_params: np.ndarray = np.array([], dtype=object)
+    DECISION_TREE_MAX_DEPTH_VALUES: Final = (None, 3, 5, 10, 20)
+    DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES: Final = (2, 5, 10)
+    DECISION_TREE_MIN_SAMPLES_LEAF_VALUES: Final = (1, 2, 4)
+    DECISION_TREE_PARAM_GRID: Final = {
+        "max_depth": DECISION_TREE_MAX_DEPTH_VALUES,
+        "min_samples_split": DECISION_TREE_MIN_SAMPLES_SPLIT_VALUES,
+        "min_samples_leaf": DECISION_TREE_MIN_SAMPLES_LEAF_VALUES,
+    }
     for fold, (train_indices, test_indices) in enumerate(
         OUTER_CROSS_VALIDATION.split(features, clusters), start=1
     ):
@@ -428,6 +389,15 @@ def random_forest_train(
     selection_by_fold: list[dict[str, object]] = []
     models: list[TrainedModel] = []
     candidate_params: np.ndarray = np.array([], dtype=object)
+    RANDOM_FOREST_N_JOBS: Final = 1
+    RANDOM_FOREST_N_ESTIMATORS_VALUES: Final = (50, 100, 200, 400)
+    RANDOM_FOREST_MAX_DEPTH_VALUES: Final = (None, 5, 10, 20)
+    RANDOM_FOREST_MAX_FEATURES_VALUES: Final = (1.0, "sqrt", "log2")
+    RANDOM_FOREST_PARAM_GRID: Final = {
+        "n_estimators": RANDOM_FOREST_N_ESTIMATORS_VALUES,
+        "max_depth": RANDOM_FOREST_MAX_DEPTH_VALUES,
+        "max_features": RANDOM_FOREST_MAX_FEATURES_VALUES,
+    }
     for fold, (train_indices, test_indices) in enumerate(
         OUTER_CROSS_VALIDATION.split(features, clusters), start=1
     ):
@@ -546,13 +516,35 @@ def hyperparameter_comparison_print(
 
 
 def main() -> None:
+    PROJECT_DIRECTORY_PATH: Final = EP3_DIRECTORY_PATH.parent
+    DATASET_DIRECTORY_PATH: Final = PROJECT_DIRECTORY_PATH / "dataset"
+    DATASET_PATH: Final = DATASET_DIRECTORY_PATH / "housing_stratified.csv"
+    OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING: Final = (
+        "ISLAND",
+        "NEAR OCEAN",
+        "NEAR BAY",
+        "<1H OCEAN",
+        "INLAND",
+    )
+    USED_VARIABLE_COLUMN_NAMES: Final = (
+        TARGET_VARIABLE_COLUMN_NAME,
+        "total_rooms",
+        "total_bedrooms",
+        "population",
+        "households",
+        "ocean_proximity",
+        CLUSTER_COLUMN_NAME,
+    )
     dataset_lazy: pl.LazyFrame = pl.scan_csv(
         DATASET_PATH,
         schema_overrides={
             "ocean_proximity": pl.Enum(OCEAN_PROXIMITY_CATEGORIES_ORDERED_ASCENDING)
         },
-    )
+    ).select(*USED_VARIABLE_COLUMN_NAMES)
 
+    ROW_WITH_NULL_OR_NAN_EXPR: Final[pl.Expr] = pl.any_horizontal(
+        pl.all().is_null()
+    ) | pl.any_horizontal(cs.float().is_nan())
     total_row_count = dataset_lazy.select(pl.len()).collect().item()
     invalid_row_count = (
         dataset_lazy.filter(ROW_WITH_NULL_OR_NAN_EXPR).select(pl.len()).collect().item()
@@ -578,6 +570,15 @@ def main() -> None:
         )
         .collect()
     )
+    ROW_WITH_OUTLIER_EXPR: Final[pl.Expr] = pl.any_horizontal(
+        *[
+            outlier_expr(column_name)
+            for column_name in (
+                TARGET_VARIABLE_COLUMN_NAME,
+                *NUMERIC_FEATURE_COLUMN_NAMES,
+            )
+        ]
+    )
     dataset_without_outliers = dataset.filter(~ROW_WITH_OUTLIER_EXPR)
     outlier_row_count = dataset.height - dataset_without_outliers.height
     print(
@@ -602,6 +603,9 @@ def main() -> None:
     mean_scores_by_dataset: dict[str, dict[str, dict[str, float]]] = {}
     target_means_by_dataset: dict[str, float] = {}
     best_hyperparameters_by_dataset: dict[str, dict[str, Hyperparameters]] = {}
+    TARGET_VARIABLE_MEASUREMENT_UNIT: Final = (
+        "dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000"
+    )
     for dataset_key, dataset_name, evaluation_dataset in (
         ("dados_com_outliers", "Dados com outliers", dataset),
         ("dados_sem_outliers", "Dados sem outliers", dataset_without_outliers),
@@ -663,9 +667,7 @@ def main() -> None:
             "Árvore de decisão": tree_based_models_feature_names,
             "Floresta aleatória": tree_based_models_feature_names,
         }
-        best_model_name, _ = max(
-            model_scores, key=lambda item: np.mean(item[1]["r2"])
-        )
+        best_model_name, _ = max(model_scores, key=lambda item: np.mean(item[1]["r2"]))
         best_model_feature_importance = feature_importance_get(
             trained_models[best_model_name], feature_names[best_model_name]
         )
@@ -717,9 +719,7 @@ def main() -> None:
             dict[str, object], models_results[model_result_keys[best_model_name]]
         )
         best_model_result["arquivo_dos_modelos"] = str(relative_model_output_path)
-        best_model_result["importancia_das_features"] = (
-            best_model_feature_importance
-        )
+        best_model_result["importancia_das_features"] = best_model_feature_importance
         datasets_results[dataset_key] = {
             "nome": dataset_name,
             "quantidade_de_linhas": evaluation_dataset.height,
@@ -843,6 +843,8 @@ def main() -> None:
         "metricas": metric_sensitivity,
         "hiperparametros": hyperparameter_sensitivity,
     }
+    OUTPUT_DIRECTORY_PATH: Final = EP3_DIRECTORY_PATH / "output"
+    OUTPUT_PATH: Final = OUTPUT_DIRECTORY_PATH / "resultados.json"
     OUTPUT_DIRECTORY_PATH.mkdir(parents=True, exist_ok=True)
     temporary_output_path = OUTPUT_PATH.with_suffix(".json.tmp")
     temporary_output_path.write_text(
