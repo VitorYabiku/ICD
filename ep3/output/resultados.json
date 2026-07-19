@@ -148,7 +148,7 @@
             ],
             "medias": {
               "r2": 0.48648426700716546,
-              "tempo_de_treinamento_segundos": 0.0029041528701782226,
+              "tempo_de_treinamento_segundos": 0.0030143022537231444,
               "rmse": {
                 "valor": 1.3599870125532607,
                 "proporcao_media_alvo": 0.35131238439790285
@@ -158,7 +158,373 @@
                 "proporcao_media_alvo": 0.2394703175573485
               }
             }
-          }
+          },
+          "importancia_das_features": {
+            "metodo": "coeficientes_absolutos",
+            "folds": [
+              {
+                "fold": 1,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2367572955432906
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.144655593523519
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.24038550718005347
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.19695886808487323
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.17236486137377763
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.05962039074436795
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05076582860906022
+                  }
+                ]
+              },
+              {
+                "fold": 2,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2298198594907135
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.146769618050449
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.28393952567255404
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.23377386192450328
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.16343904954325755
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.04890974275690534
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.04215255252722229
+                  }
+                ]
+              },
+              {
+                "fold": 3,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2270789602809744
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.1447756025638385
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.28070787185471574
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.2360280295563823
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.15362593429613425
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.052492958622725676
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.03254170136754167
+                  }
+                ]
+              },
+              {
+                "fold": 4,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2370437172792357
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.159535011543602
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.26913984671516666
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.22194927273058568
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.14382800195877066
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.07869309166162101
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05171572173316012
+                  }
+                ]
+              },
+              {
+                "fold": 5,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2432142865377704
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.1383371941787472
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.3125062996448341
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.23342325613240056
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.15139853576892298
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.06126690239641616
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05438449265917281
+                  }
+                ]
+              },
+              {
+                "fold": 6,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2509213149965412
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.1485894422441283
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.2562507999757984
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.22396865619515152
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.1429656798671517
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.07285317381441095
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05153449765868115
+                  }
+                ]
+              },
+              {
+                "fold": 7,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2384949354937458
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.142787070748893
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.5339346482912786
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.23347030906701263
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.14881479563189765
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.05881814508759514
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 3.2185577230964746e-05
+                  }
+                ]
+              },
+              {
+                "fold": 8,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2548682219430685
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.1468978668209122
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.24216023279445414
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.23080892209371395
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.13432809439513538
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.07530676481389736
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.06011104055262803
+                  }
+                ]
+              },
+              {
+                "fold": 9,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2238965142237794
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.125341999120343
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.30265933957070285
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.2510848176584088
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.17131035959606603
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05268619941062626
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.040757636779312184
+                  }
+                ]
+              },
+              {
+                "fold": 10,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.2409702452457285
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 1.1179920883449221
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.3078486456848962
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.26201836708529785
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.1588576683364683
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.05323807655368527
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.04224839358711654
+                  }
+                ]
+              }
+            ],
+            "media_geral": [
+              {
+                "feature": "ocean_proximity_INLAND",
+                "importancia": 1.238306535103485
+              },
+              {
+                "feature": "bedrooms_per_room",
+                "importancia": 1.1415681487139355
+              },
+              {
+                "feature": "ocean_proximity_ISLAND",
+                "importancia": 0.29861060782892734
+              },
+              {
+                "feature": "rooms_per_household",
+                "importancia": 0.236691099962351
+              },
+              {
+                "feature": "ocean_proximity_<1H OCEAN",
+                "importancia": 0.15409329807675826
+              },
+              {
+                "feature": "ocean_proximity_NEAR OCEAN",
+                "importancia": 0.05642587527795012
+              },
+              {
+                "feature": "population_per_household",
+                "importancia": 0.04758707441338759
+              }
+            ]
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_com_outliers_regressao_linear.joblib"
         },
         "arvore_de_decisao": {
           "nome": "Árvore de decisão",
@@ -287,7 +653,7 @@
             ],
             "medias": {
               "r2": 0.6999238471668827,
-              "tempo_de_treinamento_segundos": 0.021411895751953125,
+              "tempo_de_treinamento_segundos": 0.024087047576904295,
               "rmse": {
                 "valor": 1.0395605165444186,
                 "proporcao_media_alvo": 0.268539684880875
@@ -387,7 +753,417 @@
               "min_samples_split": 2
             },
             "r2_medio_interno_geral": 0.703507416960361
-          }
+          },
+          "importancia_das_features": {
+            "metodo": "importancia_por_impureza",
+            "folds": [
+              {
+                "fold": 1,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9187610074528457
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.0716490610813372
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.009589931465817087
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 2,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9195090389737385
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.07211763480718794
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.005389852618379915
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0015004435524206276
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0014830300482730709
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 3,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9061689192433803
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.07229082685926992
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01100645438659843
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.010533799510751401
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 4,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9203510960719795
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.06935999843182569
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.010288905496194795
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 5,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9175395995766419
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.0705055088556801
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01195489156767799
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 6,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9149239443927842
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.07257753893228569
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.007560545100259016
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.004937971574670966
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 7,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9103126290498387
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.0694139999245977
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.013080428648818665
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.007192942376744951
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 8,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9164402362893872
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.06932767629321711
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.010920880799154134
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0017229868417341931
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.001588219776507379
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 9,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.910770338032619
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.0725522933363997
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.012445361412588255
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.004232007218393029
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 10,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.9156563062482761
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.07207732541180244
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.005492243662789142
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.004403133436874537
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.001709022773411183
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0006619684668466204
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  }
+                ]
+              }
+            ],
+            "media_geral": [
+              {
+                "feature": "bedrooms_per_room",
+                "importancia": 0.9150433115331491
+              },
+              {
+                "feature": "ocean_proximity_INLAND",
+                "importancia": 0.07118718639336033
+              },
+              {
+                "feature": "population_per_household",
+                "importancia": 0.009772949515827743
+              },
+              {
+                "feature": "rooms_per_household",
+                "importancia": 0.0034505871007442152
+              },
+              {
+                "feature": "ocean_proximity_NEAR OCEAN",
+                "importancia": 0.000479768610233919
+              },
+              {
+                "feature": "ocean_proximity_<1H OCEAN",
+                "importancia": 6.619684668466204e-05
+              },
+              {
+                "feature": "ocean_proximity_ISLAND",
+                "importancia": 0.0
+              },
+              {
+                "feature": "ocean_proximity_NEAR BAY",
+                "importancia": 0.0
+              }
+            ]
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_com_outliers_arvore_de_decisao.joblib"
         },
         "floresta_aleatoria": {
           "nome": "Floresta aleatória",
@@ -516,7 +1292,7 @@
             ],
             "medias": {
               "r2": 0.7365459276566121,
-              "tempo_de_treinamento_segundos": 2.753294658660889,
+              "tempo_de_treinamento_segundos": 2.8254125118255615,
               "rmse": {
                 "valor": 0.9741045543725322,
                 "proporcao_media_alvo": 0.25163107477547975
@@ -617,7 +1393,6 @@
             },
             "r2_medio_interno_geral": 0.7349837075584374
           },
-          "arquivo_dos_modelos": "output/modelos/dados_com_outliers.joblib",
           "importancia_das_features": {
             "metodo": "importancia_por_impureza",
             "folds": [
@@ -1026,7 +1801,8 @@
                 "importancia": 3.0990190114746015e-05
               }
             ]
-          }
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_com_outliers_floresta_aleatoria.joblib"
         }
       },
       "comparacao_dos_modelos": [
@@ -1035,7 +1811,7 @@
           "modelo": "Floresta aleatória",
           "metricas_medias": {
             "r2": 0.7365459276566121,
-            "tempo_de_treinamento_segundos": 2.753294658660889,
+            "tempo_de_treinamento_segundos": 2.8254125118255615,
             "rmse": 0.9741045543725322,
             "mae": 0.7007656239162104
           }
@@ -1045,7 +1821,7 @@
           "modelo": "Árvore de decisão",
           "metricas_medias": {
             "r2": 0.6999238471668827,
-            "tempo_de_treinamento_segundos": 0.021411895751953125,
+            "tempo_de_treinamento_segundos": 0.024087047576904295,
             "rmse": 1.0395605165444186,
             "mae": 0.7471850544903452
           }
@@ -1055,7 +1831,7 @@
           "modelo": "Regressão linear",
           "metricas_medias": {
             "r2": 0.48648426700716546,
-            "tempo_de_treinamento_segundos": 0.0029041528701782226,
+            "tempo_de_treinamento_segundos": 0.0030143022537231444,
             "rmse": 1.3599870125532607,
             "mae": 0.9270282979865915
           }
@@ -1200,7 +1976,7 @@
             ],
             "medias": {
               "r2": 0.6086270092389249,
-              "tempo_de_treinamento_segundos": 0.003435039520263672,
+              "tempo_de_treinamento_segundos": 0.005158042907714844,
               "rmse": {
                 "valor": 0.920412835469501,
                 "proporcao_media_alvo": 0.24660991992223116
@@ -1210,7 +1986,373 @@
                 "proporcao_media_alvo": 0.19394125647266217
               }
             }
-          }
+          },
+          "importancia_das_features": {
+            "metodo": "coeficientes_absolutos",
+            "folds": [
+              {
+                "fold": 1,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9957391261044658
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7608163823881363
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.35508902376024176
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.23704743689396893
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.20817425544100254
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13055031710089376
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.038985951935588035
+                  }
+                ]
+              },
+              {
+                "fold": 2,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.999800763037239
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7590881682753292
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3560360041862801
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.31376074166912615
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.23866017518466687
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13256377306718833
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.043761327912260534
+                  }
+                ]
+              },
+              {
+                "fold": 3,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9935549476499215
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7547710568851946
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3652660469879174
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.27935141210280084
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.2444032553081932
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13311061083669154
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.02815151967088153
+                  }
+                ]
+              },
+              {
+                "fold": 4,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.0093332365249499
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7679474029745968
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3494470812018774
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.3045781557134931
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.24144541673296943
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.1379855943510612
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.05546826946939844
+                  }
+                ]
+              },
+              {
+                "fold": 5,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9957314244909177
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7569947691539264
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.39346285806460046
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.35885647295630824
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.23487516639073103
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13806392940003395
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.04539167327378156
+                  }
+                ]
+              },
+              {
+                "fold": 6,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.001111950634912
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7564195645854969
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.35664679419898276
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.22970943822552203
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.20725790114729303
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13422627676228047
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.04249086724868862
+                  }
+                ]
+              },
+              {
+                "fold": 7,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9910361633060768
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.763898614662812
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.5138288965737063
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.35233327233832934
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.24606796831018435
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.1362556942498827
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.03782771285464213
+                  }
+                ]
+              },
+              {
+                "fold": 8,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9909094558004454
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7636686749034323
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3577896969811254
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.3102857029971748
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.25298711779553457
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.14040267437260082
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.023591061858302252
+                  }
+                ]
+              },
+              {
+                "fold": 9,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.9996521811353734
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7639755252830812
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3533102836266252
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.31158958794155317
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.2342616762773959
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.1326811032115574
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.04556850386243593
+                  }
+                ]
+              },
+              {
+                "fold": 10,
+                "features": [
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 1.0090015926887295
+                  },
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.7560452232056779
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.3611019313179797
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.33142403466868625
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.23059982626388772
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.13443021241626857
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.041022233724752125
+                  }
+                ]
+              }
+            ],
+            "media_geral": [
+              {
+                "feature": "ocean_proximity_INLAND",
+                "importancia": 0.998587084137303
+              },
+              {
+                "feature": "bedrooms_per_room",
+                "importancia": 0.7603625382317685
+              },
+              {
+                "feature": "rooms_per_household",
+                "importancia": 0.3565876607555667
+              },
+              {
+                "feature": "ocean_proximity_ISLAND",
+                "importancia": 0.31737135463194366
+              },
+              {
+                "feature": "ocean_proximity_<1H OCEAN",
+                "importancia": 0.2390057477383054
+              },
+              {
+                "feature": "population_per_household",
+                "importancia": 0.13502701857684588
+              },
+              {
+                "feature": "ocean_proximity_NEAR OCEAN",
+                "importancia": 0.04022591218107312
+              }
+            ]
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_sem_outliers_regressao_linear.joblib"
         },
         "arvore_de_decisao": {
           "nome": "Árvore de decisão",
@@ -1339,7 +2481,7 @@
             ],
             "medias": {
               "r2": 0.6626152785573216,
-              "tempo_de_treinamento_segundos": 0.02694845199584961,
+              "tempo_de_treinamento_segundos": 0.026905202865600587,
               "rmse": {
                 "valor": 0.8544447300894633,
                 "proporcao_media_alvo": 0.22893481962129508
@@ -1439,7 +2581,417 @@
               "min_samples_split": 2
             },
             "r2_medio_interno_geral": 0.6620568178067073
-          }
+          },
+          "importancia_das_features": {
+            "metodo": "importancia_por_impureza",
+            "folds": [
+              {
+                "fold": 1,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8444912261464803
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13539413581949356
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01843160393883454
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0009162065536160824
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0007668275415755911
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 2,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.843245915235251
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.1371868597680409
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01835878895287783
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0012084360438302075
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 3,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8435803045051491
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13404022647302952
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.020064953632573077
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0015115305137964625
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0008029848754518514
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 4,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8389142271980718
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.14036446335367
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01819820558542225
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0015205792078774262
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0010025246549584318
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 5,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8471871648231155
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13312594016990933
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.017204751267051635
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0016201218823777735
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0008620218575456079
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 6,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8439372262034042
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.1334068625675827
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.0194406955215266
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0024465947353935194
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0007686209720928938
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 7,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.844556878102626
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13470228997983827
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.0162423316375659
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.003507363427932448
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0009911368520373275
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 8,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8448049616709981
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13557727876423434
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01840785861998187
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0008784197304983446
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0003314812142873985
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 9,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8464487300621624
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13224183682911578
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.01665712659739064
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.0037326528208909957
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0009196536904401315
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              },
+              {
+                "fold": 10,
+                "features": [
+                  {
+                    "feature": "bedrooms_per_room",
+                    "importancia": 0.8413388161649594
+                  },
+                  {
+                    "feature": "ocean_proximity_INLAND",
+                    "importancia": 0.13864979159475996
+                  },
+                  {
+                    "feature": "population_per_household",
+                    "importancia": 0.018338605006843155
+                  },
+                  {
+                    "feature": "rooms_per_household",
+                    "importancia": 0.001672787233437435
+                  },
+                  {
+                    "feature": "ocean_proximity_<1H OCEAN",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_ISLAND",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR BAY",
+                    "importancia": 0.0
+                  },
+                  {
+                    "feature": "ocean_proximity_NEAR OCEAN",
+                    "importancia": 0.0
+                  }
+                ]
+              }
+            ],
+            "media_geral": [
+              {
+                "feature": "bedrooms_per_room",
+                "importancia": 0.8438505450112219
+              },
+              {
+                "feature": "ocean_proximity_INLAND",
+                "importancia": 0.13546896853196744
+              },
+              {
+                "feature": "population_per_household",
+                "importancia": 0.018134492076006748
+              },
+              {
+                "feature": "rooms_per_household",
+                "importancia": 0.001710993857756905
+              },
+              {
+                "feature": "ocean_proximity_<1H OCEAN",
+                "importancia": 0.0008350005230470878
+              },
+              {
+                "feature": "ocean_proximity_ISLAND",
+                "importancia": 0.0
+              },
+              {
+                "feature": "ocean_proximity_NEAR BAY",
+                "importancia": 0.0
+              },
+              {
+                "feature": "ocean_proximity_NEAR OCEAN",
+                "importancia": 0.0
+              }
+            ]
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_sem_outliers_arvore_de_decisao.joblib"
         },
         "floresta_aleatoria": {
           "nome": "Floresta aleatória",
@@ -1568,7 +3120,7 @@
             ],
             "medias": {
               "r2": 0.6863127190606889,
-              "tempo_de_treinamento_segundos": 2.9411733388900756,
+              "tempo_de_treinamento_segundos": 2.940979838371277,
               "rmse": {
                 "valor": 0.8239166894808921,
                 "proporcao_media_alvo": 0.22075531868460718
@@ -1669,7 +3221,6 @@
             },
             "r2_medio_interno_geral": 0.6859543920479236
           },
-          "arquivo_dos_modelos": "output/modelos/dados_sem_outliers.joblib",
           "importancia_das_features": {
             "metodo": "importancia_por_impureza",
             "folds": [
@@ -2078,7 +3629,8 @@
                 "importancia": 3.37302463398007e-05
               }
             ]
-          }
+          },
+          "arquivo_dos_modelos": "output/modelos/dados_sem_outliers_floresta_aleatoria.joblib"
         }
       },
       "comparacao_dos_modelos": [
@@ -2087,7 +3639,7 @@
           "modelo": "Floresta aleatória",
           "metricas_medias": {
             "r2": 0.6863127190606889,
-            "tempo_de_treinamento_segundos": 2.9411733388900756,
+            "tempo_de_treinamento_segundos": 2.940979838371277,
             "rmse": 0.8239166894808921,
             "mae": 0.6377263406059412
           }
@@ -2097,7 +3649,7 @@
           "modelo": "Árvore de decisão",
           "metricas_medias": {
             "r2": 0.6626152785573216,
-            "tempo_de_treinamento_segundos": 0.02694845199584961,
+            "tempo_de_treinamento_segundos": 0.026905202865600587,
             "rmse": 0.8544447300894633,
             "mae": 0.6621165611404208
           }
@@ -2107,7 +3659,7 @@
           "modelo": "Regressão linear",
           "metricas_medias": {
             "r2": 0.6086270092389249,
-            "tempo_de_treinamento_segundos": 0.003435039520263672,
+            "tempo_de_treinamento_segundos": 0.005158042907714844,
             "rmse": 0.920412835469501,
             "mae": 0.7238395837475348
           }

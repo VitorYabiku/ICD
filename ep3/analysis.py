@@ -77,9 +77,9 @@ def main() -> None:
         importance_values: list[float] = []
         importance_values_by_feature: dict[str, list[float]] = {}
         for dataset_key, dataset_name in DATASET_NAMES.items():
-            features = results["conjuntos_de_dados"][dataset_key]["modelos"][
-                model_key
-            ]["importancia_das_features"]["media_geral"]
+            features = results["conjuntos_de_dados"][dataset_key]["modelos"][model_key][
+                "importancia_das_features"
+            ]["media_geral"]
             for feature in features:
                 feature_name = feature["feature"]
                 importance = feature["importancia"]
@@ -92,10 +92,10 @@ def main() -> None:
 
         feature_order = sorted(
             importance_values_by_feature,
-            key=lambda feature_name: sum(
-                importance_values_by_feature[feature_name]
-            )
-            / len(importance_values_by_feature[feature_name]),
+            key=lambda feature_name: (
+                sum(importance_values_by_feature[feature_name])
+                / len(importance_values_by_feature[feature_name])
+            ),
             reverse=True,
         )
         plot_data = {
@@ -104,9 +104,7 @@ def main() -> None:
             "Importância": importance_values,
         }
         plot_path = (
-            EP3_DIRECTORY_PATH
-            / "output"
-            / f"importancia_features_{model_key}.eps"
+            EP3_DIRECTORY_PATH / "output" / f"importancia_features_{model_key}.eps"
         )
         with subplots(figsize=(10, 6), savefig_path=plot_path) as axis:
             sns.barplot(
