@@ -196,23 +196,30 @@ def feature_importance_print(
 def model_bundle_save(
     dataset_key: str,
     dataset_name: str,
+    model_key: str,
     model_name: str,
     feature_names: list[str],
     models: list[TrainedModel],
+    evaluation: dict[str, object],
+    feature_importance: FeatureImportance,
 ) -> Path:
     MODEL_OUTPUT_DIRECTORY_PATH: Final = EP3_DIRECTORY_PATH / "output" / "modelos"
     MODEL_OUTPUT_DIRECTORY_PATH.mkdir(parents=True, exist_ok=True)
-    output_path = MODEL_OUTPUT_DIRECTORY_PATH / f"{dataset_key}.joblib"
+    output_path = MODEL_OUTPUT_DIRECTORY_PATH / f"{dataset_key}_{model_key}.joblib"
     temporary_output_path = output_path.with_suffix(".joblib.tmp")
     dump(
         {
+            "valor_chave_do_conjunto_de_dados": dataset_key,
             "conjunto_de_dados": dataset_name,
+            "valor_chave_do_modelo": model_key,
             "modelo": model_name,
             "nomes_das_features": feature_names,
             "modelos": [
                 {"fold": fold, "estimador": model}
                 for fold, model in enumerate(models, start=1)
             ],
+            "avaliacao": evaluation,
+            "importancia_das_features": feature_importance,
         },
         temporary_output_path,
     )
@@ -689,20 +696,13 @@ def main() -> None:
             "Árvore de decisão": tree_based_models_feature_names,
             "Floresta aleatória": tree_based_models_feature_names,
         }
+        model_feature_importances = {
+            model_name: feature_importance_get(models, feature_names[model_name])
+            for model_name, models in trained_models.items()
+        }
         best_model_name, _ = max(model_scores, key=lambda item: np.mean(item[1]["r2"]))
-        best_model_feature_importance = feature_importance_get(
-            trained_models[best_model_name], feature_names[best_model_name]
-        )
+        best_model_feature_importance = model_feature_importances[best_model_name]
         feature_importance_print(best_model_name, best_model_feature_importance)
-        model_output_path = model_bundle_save(
-            dataset_key,
-            dataset_name,
-            best_model_name,
-            feature_names[best_model_name],
-            trained_models[best_model_name],
-        )
-        relative_model_output_path = model_output_path.relative_to(EP3_DIRECTORY_PATH)
-        print(f"Modelos salvos em {model_output_path}")
         mean_scores_by_dataset[dataset_name] = {
             model_name: {
                 metric: float(np.mean(metric_scores))
@@ -737,11 +737,24 @@ def main() -> None:
             "Árvore de decisão": "arvore_de_decisao",
             "Floresta aleatória": "floresta_aleatoria",
         }
-        best_model_result = cast(
-            dict[str, object], models_results[model_result_keys[best_model_name]]
-        )
-        best_model_result["arquivo_dos_modelos"] = str(relative_model_output_path)
-        best_model_result["importancia_das_features"] = best_model_feature_importance
+        for model_name, model_result_key in model_result_keys.items():
+            model_result = cast(dict[str, object], models_results[model_result_key])
+            feature_importance = model_feature_importances[model_name]
+            model_result["importancia_das_features"] = feature_importance
+            model_output_path = model_bundle_save(
+                dataset_key,
+                dataset_name,
+                model_result_key,
+                model_name,
+                feature_names[model_name],
+                trained_models[model_name],
+                cast(dict[str, object], model_result["avaliacao"]),
+                feature_importance,
+            )
+            model_result["arquivo_dos_modelos"] = str(
+                model_output_path.relative_to(EP3_DIRECTORY_PATH)
+            )
+            print(f"Modelos salvos em {model_output_path}")
         datasets_results[dataset_key] = {
             "nome": dataset_name,
             "quantidade_de_linhas": evaluation_dataset.height,
@@ -874,6 +887,11 @@ def main() -> None:
         encoding="utf-8",
     )
     temporary_output_path.replace(OUTPUT_PATH)
+    for dataset_key in datasets_results:
+        legacy_model_path = (
+            OUTPUT_DIRECTORY_PATH / "modelos" / f"{dataset_key}.joblib"
+        )
+        legacy_model_path.unlink(missing_ok=True)
     print(f"\nResultados salvos em {OUTPUT_PATH}")
 
 
