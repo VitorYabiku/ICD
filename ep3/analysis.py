@@ -53,7 +53,6 @@ def main() -> None:
         "Conjunto de dados": dataset_names,
         "R²": r2_values,
     }
-    sns.set_theme()
     with subplots(savefig_path=PLOT_PATH) as axis:
         sns.barplot(
             data=plot_data,

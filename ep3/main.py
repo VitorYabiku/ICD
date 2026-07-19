@@ -30,9 +30,8 @@ type FeatureImportance = dict[str, object]
 TARGET_VARIABLE_COLUMN_NAME: Final = "median_income"
 CLUSTER_COLUMN_NAME: Final = "cluster"
 NUMERIC_FEATURE_COLUMN_NAMES: Final = (
-    "rooms_per_household",
+    "median_house_value",
     "bedrooms_per_room",
-    "population_per_household",
 )
 INNER_CROSS_VALIDATION: Final = StratifiedKFold(
     n_splits=CROSS_VALIDATION_FOLD_COUNT,
@@ -555,12 +554,21 @@ def main() -> None:
         "<1H OCEAN",
         "INLAND",
     )
+    OCEAN_PROXIMITY_TRANSFORMED_CATEGORIES_ORDERED_ASCENDING: Final = (
+        "ISLAND",
+        "COASTAL",
+        "INLAND",
+    )
+    OCEAN_PROXIMITY_COASTAL_CATEGORIES: Final = (
+        "NEAR OCEAN",
+        "NEAR BAY",
+        "<1H OCEAN",
+    )
     USED_VARIABLE_COLUMN_NAMES: Final = (
         TARGET_VARIABLE_COLUMN_NAME,
+        "median_house_value",
         "total_rooms",
         "total_bedrooms",
-        "population",
-        "households",
         "ocean_proximity",
         CLUSTER_COLUMN_NAME,
     )
@@ -582,19 +590,38 @@ def main() -> None:
     print(f"Linhas totais: {total_row_count}")
     print(f"Linhas removidas por null ou NaN: {invalid_row_count}")
     print(f"Linhas utilizadas: {total_row_count - invalid_row_count}")
+    coastal_category_counts = (
+        dataset_lazy.filter(~ROW_WITH_NULL_OR_NAN_EXPR)
+        .select(
+            *[
+                (pl.col("ocean_proximity") == category).sum().alias(category)
+                for category in OCEAN_PROXIMITY_COASTAL_CATEGORIES
+            ]
+        )
+        .collect()
+        .row(0, named=True)
+    )
+    print("Composição da categoria COASTAL:")
+    for category in OCEAN_PROXIMITY_COASTAL_CATEGORIES:
+        print(f"  {category}: {coastal_category_counts[category]}")
 
     dataset = (
         dataset_lazy.filter(~ROW_WITH_NULL_OR_NAN_EXPR)
         .select(
             TARGET_VARIABLE_COLUMN_NAME,
-            (pl.col("total_rooms") / pl.col("households")).alias("rooms_per_household"),
+            "median_house_value",
             (pl.col("total_bedrooms") / pl.col("total_rooms")).alias(
                 "bedrooms_per_room"
             ),
-            (pl.col("population") / pl.col("households")).alias(
-                "population_per_household"
-            ),
-            "ocean_proximity",
+            pl.when(
+                pl.col("ocean_proximity")
+                .cast(pl.String)
+                .is_in(OCEAN_PROXIMITY_COASTAL_CATEGORIES)
+            )
+            .then(pl.lit("COASTAL"))
+            .otherwise(pl.col("ocean_proximity").cast(pl.String))
+            .cast(pl.Enum(OCEAN_PROXIMITY_TRANSFORMED_CATEGORIES_ORDERED_ASCENDING))
+            .alias("ocean_proximity"),
             CLUSTER_COLUMN_NAME,
         )
         .collect()
@@ -887,11 +914,6 @@ def main() -> None:
         encoding="utf-8",
     )
     temporary_output_path.replace(OUTPUT_PATH)
-    for dataset_key in datasets_results:
-        legacy_model_path = (
-            OUTPUT_DIRECTORY_PATH / "modelos" / f"{dataset_key}.joblib"
-        )
-        legacy_model_path.unlink(missing_ok=True)
     print(f"\nResultados salvos em {OUTPUT_PATH}")
 
 

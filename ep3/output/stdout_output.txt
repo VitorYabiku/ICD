@@ -1,0 +1,411 @@
+=== Preparação dos dados ===
+Linhas totais: 20433
+Linhas removidas por null ou NaN: 0
+Linhas utilizadas: 20433
+Composição da categoria COASTAL:
+  NEAR OCEAN: 2628
+  NEAR BAY: 2270
+  <1H OCEAN: 9034
+Linhas removidas por um ou mais outliers: 1845 (9.03%)
+Linhas utilizadas sem outliers: 18588
+
+
+######## Dados com outliers ########
+Escala de median_income (dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000): mínimo=0.4999; média=3.8712; máximo=15.0001
+RMSE e MAE estão na mesma unidade da coluna alvo.
+
+=== Regressão linear ===
+--- Treinamento: Regressão linear ---
+
+--- Avaliação: Regressão linear ---
+
+As métricas externas abaixo foram calculadas em cada fold externa.
+Fold 1: R² = 0.6525; RMSE = 1.0736 (27.73% da média da coluna alvo); MAE = 0.7401 (19.12% da média da coluna alvo)
+Fold 2: R² = 0.6846; RMSE = 1.0530 (27.20% da média da coluna alvo); MAE = 0.7194 (18.58% da média da coluna alvo)
+Fold 3: R² = 0.6531; RMSE = 1.1195 (28.92% da média da coluna alvo); MAE = 0.7570 (19.55% da média da coluna alvo)
+Fold 4: R² = 0.6703; RMSE = 1.0760 (27.80% da média da coluna alvo); MAE = 0.7220 (18.65% da média da coluna alvo)
+Fold 5: R² = 0.7042; RMSE = 1.0363 (26.77% da média da coluna alvo); MAE = 0.7261 (18.76% da média da coluna alvo)
+Fold 6: R² = 0.6688; RMSE = 1.0854 (28.04% da média da coluna alvo); MAE = 0.7296 (18.85% da média da coluna alvo)
+Fold 7: R² = 0.6860; RMSE = 1.0624 (27.44% da média da coluna alvo); MAE = 0.7297 (18.85% da média da coluna alvo)
+Fold 8: R² = 0.6874; RMSE = 1.0835 (27.99% da média da coluna alvo); MAE = 0.7407 (19.13% da média da coluna alvo)
+Fold 9: R² = 0.7066; RMSE = 1.0301 (26.61% da média da coluna alvo); MAE = 0.7149 (18.47% da média da coluna alvo)
+Fold 10: R² = 0.6885; RMSE = 1.1079 (28.62% da média da coluna alvo); MAE = 0.7539 (19.47% da média da coluna alvo)
+R² médio: 0.6802
+Tempo médio de treinamento: 0.0023 s
+RMSE médio: 1.0728 (27.71% da média da coluna alvo)
+MAE médio: 0.7333 (18.94% da média da coluna alvo)
+
+=== Árvore de decisão ===
+--- Treinamento e seleção de hiperparâmetros: Árvore de decisão ---
+Processando fold externa 1/10...
+Melhores hiperparâmetros da fold externa 1: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7716; RMSE externo=0.8703 (22.48% da média da coluna alvo); MAE externo=0.6305 (16.29% da média da coluna
+ alvo)
+Processando fold externa 2/10...
+Melhores hiperparâmetros da fold externa 2: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7785; RMSE externo=0.8825 (22.80% da média da coluna alvo); MAE externo=0.6309 (16.30% da média da coluna
+ alvo)
+Processando fold externa 3/10...
+Melhores hiperparâmetros da fold externa 3: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7757; RMSE externo=0.9001 (23.25% da média da coluna alvo); MAE externo=0.6383 (16.49% da média da coluna
+ alvo)
+Processando fold externa 4/10...
+Melhores hiperparâmetros da fold externa 4: max_depth=5, min_samples_split=2, min_samples_leaf=2; R² externo=0.7860; RMSE externo=0.8668 (22.39% da média da coluna alvo); MAE externo=0.6360 (16.43% da média da coluna
+ alvo)
+Processando fold externa 5/10...
+Melhores hiperparâmetros da fold externa 5: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7753; RMSE externo=0.9034 (23.34% da média da coluna alvo); MAE externo=0.6453 (16.67% da média da coluna
+ alvo)
+Processando fold externa 6/10...
+Melhores hiperparâmetros da fold externa 6: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7815; RMSE externo=0.8815 (22.77% da média da coluna alvo); MAE externo=0.6334 (16.36% da média da coluna
+ alvo)
+Processando fold externa 7/10...
+Melhores hiperparâmetros da fold externa 7: max_depth=10, min_samples_split=10, min_samples_leaf=4; R² externo=0.7678; RMSE externo=0.9136 (23.60% da média da coluna alvo); MAE externo=0.6287 (16.24% da média da colu
+na alvo)
+Processando fold externa 8/10...
+Melhores hiperparâmetros da fold externa 8: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7842; RMSE externo=0.9003 (23.26% da média da coluna alvo); MAE externo=0.6386 (16.50% da média da coluna
+ alvo)
+Processando fold externa 9/10...
+Melhores hiperparâmetros da fold externa 9: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.8088; RMSE externo=0.8315 (21.48% da média da coluna alvo); MAE externo=0.6201 (16.02% da média da coluna
+ alvo)
+Processando fold externa 10/10...
+Melhores hiperparâmetros da fold externa 10: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.8075; RMSE externo=0.8710 (22.50% da média da coluna alvo); MAE externo=0.6340 (16.38% da média da colun
+a alvo)
+
+Os R² externos abaixo pertencem à melhor combinação de cada fold externa, não a uma única combinação geral.
+
+--- Avaliação: Árvore de decisão ---
+R² médio: 0.7837
+Tempo médio de treinamento: 0.0171 s
+RMSE médio: 0.8821 (22.79% da média da coluna alvo)
+MAE médio: 0.6336 (16.37% da média da coluna alvo)
+Melhor combinação geral por R² médio interno: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² médio interno entre folds externas=0.7835
+
+=== Floresta aleatória ===
+--- Treinamento e seleção de hiperparâmetros: Floresta aleatória ---
+Processando fold externa 1/10...
+Melhores hiperparâmetros da fold externa 1: n_estimators=200, max_depth=10, max_features=sqrt; R² externo=0.7999; RMSE externo=0.8146 (21.04% da média da coluna alvo); MAE externo=0.5780 (14.93% da média da coluna al
+vo)
+Processando fold externa 2/10...
+Melhores hiperparâmetros da fold externa 2: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.8104; RMSE externo=0.8164 (21.09% da média da coluna alvo); MAE externo=0.5783 (14.94% da média da coluna al
+vo)
+Processando fold externa 3/10...
+Melhores hiperparâmetros da fold externa 3: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7954; RMSE externo=0.8597 (22.21% da média da coluna alvo); MAE externo=0.5955 (15.38% da média da coluna al
+vo)
+Processando fold externa 4/10...
+Melhores hiperparâmetros da fold externa 4: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.8204; RMSE externo=0.7942 (20.52% da média da coluna alvo); MAE externo=0.5782 (14.94% da média da coluna al
+vo)
+Processando fold externa 5/10...
+Melhores hiperparâmetros da fold externa 5: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7991; RMSE externo=0.8541 (22.06% da média da coluna alvo); MAE externo=0.5907 (15.26% da média da coluna al
+vo)
+Processando fold externa 6/10...
+Melhores hiperparâmetros da fold externa 6: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.8147; RMSE externo=0.8119 (20.97% da média da coluna alvo); MAE externo=0.5846 (15.10% da média da coluna al
+vo)
+Processando fold externa 7/10...
+Melhores hiperparâmetros da fold externa 7: n_estimators=200, max_depth=10, max_features=sqrt; R² externo=0.7918; RMSE externo=0.8650 (22.35% da média da coluna alvo); MAE externo=0.5974 (15.43% da média da coluna al
+vo)
+Processando fold externa 8/10...
+Melhores hiperparâmetros da fold externa 8: n_estimators=200, max_depth=10, max_features=sqrt; R² externo=0.8008; RMSE externo=0.8649 (22.34% da média da coluna alvo); MAE externo=0.5942 (15.35% da média da coluna al
+vo)
+Processando fold externa 9/10...
+Melhores hiperparâmetros da fold externa 9: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.8319; RMSE externo=0.7798 (20.14% da média da coluna alvo); MAE externo=0.5653 (14.60% da média da coluna al
+vo)
+Processando fold externa 10/10...
+Melhores hiperparâmetros da fold externa 10: n_estimators=200, max_depth=10, max_features=sqrt; R² externo=0.8254; RMSE externo=0.8295 (21.43% da média da coluna alvo); MAE externo=0.5883 (15.20% da média da coluna a
+lvo)
+
+--- Avaliação: Floresta aleatória ---
+R² médio: 0.8090
+Tempo médio de treinamento: 2.3869 s
+RMSE médio: 0.8290 (21.42% da média da coluna alvo)
+MAE médio: 0.5850 (15.11% da média da coluna alvo)
+Melhor combinação geral por R² médio interno: n_estimators=400, max_depth=10, max_features=sqrt; R² médio interno entre folds externas=0.8072
+
+=== Comparação final ===
+Floresta aleatória: R² médio=0.8090; RMSE médio=0.8290 (21.42% da média da coluna alvo); MAE médio=0.5850 (15.11% da média da coluna alvo)
+Árvore de decisão: R² médio=0.7837; RMSE médio=0.8821 (22.79% da média da coluna alvo); MAE médio=0.6336 (16.37% da média da coluna alvo)
+Regressão linear: R² médio=0.6802; RMSE médio=1.0728 (27.71% da média da coluna alvo); MAE médio=0.7333 (18.94% da média da coluna alvo)
+
+=== Importância das features: Floresta aleatória ===
+Fold 1:
+  bedrooms_per_room: 0.599891
+  median_house_value: 0.364671
+  ocean_proximity_COASTAL: 0.021642
+  ocean_proximity_INLAND: 0.013709
+  ocean_proximity_ISLAND: 0.000088
+Fold 2:
+  bedrooms_per_room: 0.606453
+  median_house_value: 0.359132
+  ocean_proximity_COASTAL: 0.020685
+  ocean_proximity_INLAND: 0.013650
+  ocean_proximity_ISLAND: 0.000081
+Fold 3:
+  bedrooms_per_room: 0.609951
+  median_house_value: 0.356274
+  ocean_proximity_COASTAL: 0.019892
+  ocean_proximity_INLAND: 0.013801
+  ocean_proximity_ISLAND: 0.000081
+Fold 4:
+  bedrooms_per_room: 0.615132
+  median_house_value: 0.350830
+  ocean_proximity_COASTAL: 0.020109
+  ocean_proximity_INLAND: 0.013852
+  ocean_proximity_ISLAND: 0.000077
+Fold 5:
+  bedrooms_per_room: 0.611275
+  median_house_value: 0.353620
+  ocean_proximity_COASTAL: 0.021023
+  ocean_proximity_INLAND: 0.013987
+  ocean_proximity_ISLAND: 0.000095
+Fold 6:
+  bedrooms_per_room: 0.607152
+  median_house_value: 0.359368
+  ocean_proximity_COASTAL: 0.020491
+  ocean_proximity_INLAND: 0.012910
+  ocean_proximity_ISLAND: 0.000080
+Fold 7:
+  bedrooms_per_room: 0.605091
+  median_house_value: 0.360011
+  ocean_proximity_COASTAL: 0.020830
+  ocean_proximity_INLAND: 0.014045
+  ocean_proximity_ISLAND: 0.000024
+Fold 8:
+  bedrooms_per_room: 0.610287
+  median_house_value: 0.355156
+  ocean_proximity_COASTAL: 0.020090
+  ocean_proximity_INLAND: 0.014400
+  ocean_proximity_ISLAND: 0.000068
+Fold 9:
+  bedrooms_per_room: 0.608285
+  median_house_value: 0.357802
+  ocean_proximity_COASTAL: 0.020516
+  ocean_proximity_INLAND: 0.013319
+  ocean_proximity_ISLAND: 0.000079
+Fold 10:
+  bedrooms_per_room: 0.613771
+  median_house_value: 0.351103
+  ocean_proximity_COASTAL: 0.021895
+  ocean_proximity_INLAND: 0.013141
+  ocean_proximity_ISLAND: 0.000089
+Média geral:
+  bedrooms_per_room: 0.608729
+  median_house_value: 0.356797
+  ocean_proximity_COASTAL: 0.020717
+  ocean_proximity_INLAND: 0.013681
+  ocean_proximity_ISLAND: 0.000076
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_com_outliers_regressao_linear.joblib
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_com_outliers_arvore_de_decisao.joblib
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_com_outliers_floresta_aleatoria.joblib
+
+
+######## Dados sem outliers ########
+Escala de median_income (dezenas de milhares de dólares americanos; 1 unidade = US$ 10.000): mínimo=0.4999; média=3.6545; máximo=8.0137
+RMSE e MAE estão na mesma unidade da coluna alvo.
+
+=== Regressão linear ===
+--- Treinamento: Regressão linear ---
+
+--- Avaliação: Regressão linear ---
+
+As métricas externas abaixo foram calculadas em cada fold externa.
+Fold 1: R² = 0.6841; RMSE = 0.8139 (22.27% da média da coluna alvo); MAE = 0.6190 (16.94% da média da coluna alvo)
+Fold 2: R² = 0.7204; RMSE = 0.7641 (20.91% da média da coluna alvo); MAE = 0.6028 (16.49% da média da coluna alvo)
+Fold 3: R² = 0.7271; RMSE = 0.7640 (20.91% da média da coluna alvo); MAE = 0.5962 (16.31% da média da coluna alvo)
+Fold 4: R² = 0.7151; RMSE = 0.7706 (21.09% da média da coluna alvo); MAE = 0.5956 (16.30% da média da coluna alvo)
+Fold 5: R² = 0.7042; RMSE = 0.7868 (21.53% da média da coluna alvo); MAE = 0.6039 (16.52% da média da coluna alvo)
+Fold 6: R² = 0.7205; RMSE = 0.7613 (20.83% da média da coluna alvo); MAE = 0.5980 (16.36% da média da coluna alvo)
+Fold 7: R² = 0.7127; RMSE = 0.7563 (20.70% da média da coluna alvo); MAE = 0.5875 (16.08% da média da coluna alvo)
+Fold 8: R² = 0.6973; RMSE = 0.7927 (21.69% da média da coluna alvo); MAE = 0.6107 (16.71% da média da coluna alvo)
+Fold 9: R² = 0.7135; RMSE = 0.7505 (20.54% da média da coluna alvo); MAE = 0.5867 (16.05% da média da coluna alvo)
+Fold 10: R² = 0.6974; RMSE = 0.7834 (21.44% da média da coluna alvo); MAE = 0.6044 (16.54% da média da coluna alvo)
+R² médio: 0.7092
+Tempo médio de treinamento: 0.0031 s
+RMSE médio: 0.7744 (21.19% da média da coluna alvo)
+MAE médio: 0.6005 (16.43% da média da coluna alvo)
+
+=== Árvore de decisão ===
+--- Treinamento e seleção de hiperparâmetros: Árvore de decisão ---
+Processando fold externa 1/10...
+Melhores hiperparâmetros da fold externa 1: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7332; RMSE externo=0.7480 (20.47% da média da coluna alvo); MAE externo=0.5635 (15.42% da média da coluna
+ alvo)
+Processando fold externa 2/10...
+Melhores hiperparâmetros da fold externa 2: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7529; RMSE externo=0.7184 (19.66% da média da coluna alvo); MAE externo=0.5520 (15.10% da média da coluna
+ alvo)
+Processando fold externa 3/10...
+Melhores hiperparâmetros da fold externa 3: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7640; RMSE externo=0.7106 (19.45% da média da coluna alvo); MAE externo=0.5503 (15.06% da média da coluna
+ alvo)
+Processando fold externa 4/10...
+Melhores hiperparâmetros da fold externa 4: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7385; RMSE externo=0.7382 (20.20% da média da coluna alvo); MAE externo=0.5637 (15.43% da média da coluna
+ alvo)
+Processando fold externa 5/10...
+Melhores hiperparâmetros da fold externa 5: max_depth=5, min_samples_split=2, min_samples_leaf=4; R² externo=0.7425; RMSE externo=0.7341 (20.09% da média da coluna alvo); MAE externo=0.5574 (15.25% da média da coluna
+ alvo)
+Processando fold externa 6/10...
+Melhores hiperparâmetros da fold externa 6: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7482; RMSE externo=0.7227 (19.78% da média da coluna alvo); MAE externo=0.5590 (15.30% da média da coluna
+ alvo)
+Processando fold externa 7/10...
+Melhores hiperparâmetros da fold externa 7: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7485; RMSE externo=0.7076 (19.36% da média da coluna alvo); MAE externo=0.5481 (15.00% da média da coluna
+ alvo)
+Processando fold externa 8/10...
+Melhores hiperparâmetros da fold externa 8: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7259; RMSE externo=0.7543 (20.64% da média da coluna alvo); MAE externo=0.5707 (15.62% da média da coluna
+ alvo)
+Processando fold externa 9/10...
+Melhores hiperparâmetros da fold externa 9: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7472; RMSE externo=0.7049 (19.29% da média da coluna alvo); MAE externo=0.5423 (14.84% da média da coluna
+ alvo)
+Processando fold externa 10/10...
+Melhores hiperparâmetros da fold externa 10: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² externo=0.7152; RMSE externo=0.7601 (20.80% da média da coluna alvo); MAE externo=0.5687 (15.56% da média da colun
+a alvo)
+
+Os R² externos abaixo pertencem à melhor combinação de cada fold externa, não a uma única combinação geral.
+
+--- Avaliação: Árvore de decisão ---
+R² médio: 0.7416
+Tempo médio de treinamento: 0.0186 s
+RMSE médio: 0.7299 (19.97% da média da coluna alvo)
+MAE médio: 0.5576 (15.26% da média da coluna alvo)
+Melhor combinação geral por R² médio interno: max_depth=5, min_samples_split=2, min_samples_leaf=1; R² médio interno entre folds externas=0.7401
+
+=== Floresta aleatória ===
+--- Treinamento e seleção de hiperparâmetros: Floresta aleatória ---
+Processando fold externa 1/10...
+Melhores hiperparâmetros da fold externa 1: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7549; RMSE externo=0.7169 (19.62% da média da coluna alvo); MAE externo=0.5346 (14.63% da média da coluna al
+vo)
+Processando fold externa 2/10...
+Melhores hiperparâmetros da fold externa 2: n_estimators=200, max_depth=10, max_features=sqrt; R² externo=0.7680; RMSE externo=0.6961 (19.05% da média da coluna alvo); MAE externo=0.5307 (14.52% da média da coluna al
+vo)
+Processando fold externa 3/10...
+Melhores hiperparâmetros da fold externa 3: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7824; RMSE externo=0.6822 (18.67% da média da coluna alvo); MAE externo=0.5241 (14.34% da média da coluna al
+vo)
+Processando fold externa 4/10...
+Melhores hiperparâmetros da fold externa 4: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7600; RMSE externo=0.7073 (19.35% da média da coluna alvo); MAE externo=0.5379 (14.72% da média da coluna al
+vo)
+Processando fold externa 5/10...
+Melhores hiperparâmetros da fold externa 5: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7638; RMSE externo=0.7031 (19.24% da média da coluna alvo); MAE externo=0.5287 (14.47% da média da coluna al
+vo)
+Processando fold externa 6/10...
+Melhores hiperparâmetros da fold externa 6: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7702; RMSE externo=0.6904 (18.89% da média da coluna alvo); MAE externo=0.5290 (14.47% da média da coluna al
+vo)
+Processando fold externa 7/10...
+Melhores hiperparâmetros da fold externa 7: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7678; RMSE externo=0.6800 (18.61% da média da coluna alvo); MAE externo=0.5199 (14.23% da média da coluna al
+vo)
+Processando fold externa 8/10...
+Melhores hiperparâmetros da fold externa 8: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7507; RMSE externo=0.7195 (19.69% da média da coluna alvo); MAE externo=0.5380 (14.72% da média da coluna al
+vo)
+Processando fold externa 9/10...
+Melhores hiperparâmetros da fold externa 9: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7586; RMSE externo=0.6889 (18.85% da média da coluna alvo); MAE externo=0.5224 (14.29% da média da coluna al
+vo)
+Processando fold externa 10/10...
+Melhores hiperparâmetros da fold externa 10: n_estimators=400, max_depth=10, max_features=sqrt; R² externo=0.7413; RMSE externo=0.7244 (19.82% da média da coluna alvo); MAE externo=0.5419 (14.83% da média da coluna a
+lvo)
+
+--- Avaliação: Floresta aleatória ---
+R² médio: 0.7618
+Tempo médio de treinamento: 2.3626 s
+RMSE médio: 0.7009 (19.18% da média da coluna alvo)
+MAE médio: 0.5307 (14.52% da média da coluna alvo)
+Melhor combinação geral por R² médio interno: n_estimators=400, max_depth=10, max_features=sqrt; R² médio interno entre folds externas=0.7611
+
+=== Comparação final ===
+Floresta aleatória: R² médio=0.7618; RMSE médio=0.7009 (19.18% da média da coluna alvo); MAE médio=0.5307 (14.52% da média da coluna alvo)
+Árvore de decisão: R² médio=0.7416; RMSE médio=0.7299 (19.97% da média da coluna alvo); MAE médio=0.5576 (15.26% da média da coluna alvo)
+Regressão linear: R² médio=0.7092; RMSE médio=0.7744 (21.19% da média da coluna alvo); MAE médio=0.6005 (16.43% da média da coluna alvo)
+
+=== Importância das features: Floresta aleatória ===
+Fold 1:
+  bedrooms_per_room: 0.591015
+  median_house_value: 0.368387
+  ocean_proximity_COASTAL: 0.023784
+  ocean_proximity_INLAND: 0.016706
+  ocean_proximity_ISLAND: 0.000108
+Fold 2:
+  bedrooms_per_room: 0.596813
+  median_house_value: 0.359024
+  ocean_proximity_COASTAL: 0.026207
+  ocean_proximity_INLAND: 0.017867
+  ocean_proximity_ISLAND: 0.000089
+Fold 3:
+  bedrooms_per_room: 0.591835
+  median_house_value: 0.364341
+  ocean_proximity_COASTAL: 0.027634
+  ocean_proximity_INLAND: 0.016078
+  ocean_proximity_ISLAND: 0.000112
+Fold 4:
+  bedrooms_per_room: 0.595774
+  median_house_value: 0.362641
+  ocean_proximity_COASTAL: 0.024503
+  ocean_proximity_INLAND: 0.016995
+  ocean_proximity_ISLAND: 0.000086
+Fold 5:
+  bedrooms_per_room: 0.590875
+  median_house_value: 0.366839
+  ocean_proximity_COASTAL: 0.025210
+  ocean_proximity_INLAND: 0.016946
+  ocean_proximity_ISLAND: 0.000130
+Fold 6:
+  bedrooms_per_room: 0.591532
+  median_house_value: 0.365921
+  ocean_proximity_COASTAL: 0.025632
+  ocean_proximity_INLAND: 0.016838
+  ocean_proximity_ISLAND: 0.000077
+Fold 7:
+  bedrooms_per_room: 0.596385
+  median_house_value: 0.360861
+  ocean_proximity_COASTAL: 0.026434
+  ocean_proximity_INLAND: 0.016249
+  ocean_proximity_ISLAND: 0.000071
+Fold 8:
+  bedrooms_per_room: 0.593746
+  median_house_value: 0.364925
+  ocean_proximity_COASTAL: 0.025355
+  ocean_proximity_INLAND: 0.015879
+  ocean_proximity_ISLAND: 0.000095
+Fold 9:
+  bedrooms_per_room: 0.589256
+  median_house_value: 0.366407
+  ocean_proximity_COASTAL: 0.027274
+  ocean_proximity_INLAND: 0.016967
+  ocean_proximity_ISLAND: 0.000096
+Fold 10:
+  bedrooms_per_room: 0.596996
+  median_house_value: 0.362004
+  ocean_proximity_COASTAL: 0.024920
+  ocean_proximity_INLAND: 0.015986
+  ocean_proximity_ISLAND: 0.000095
+Média geral:
+  bedrooms_per_room: 0.593423
+  median_house_value: 0.364135
+  ocean_proximity_COASTAL: 0.025695
+  ocean_proximity_INLAND: 0.016651
+  ocean_proximity_ISLAND: 0.000096
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_sem_outliers_regressao_linear.joblib
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_sem_outliers_arvore_de_decisao.joblib
+Modelos salvos em /home/vky/Projects/school/ICD/ep3/output/modelos/dados_sem_outliers_floresta_aleatoria.joblib
+
+=== Sensibilidade a outliers ===
+Regressão linear:
+  R² médio com outliers=0.6802; sem outliers=0.7092; diferença=+0.0291
+  RMSE médio com outliers=1.0728 (27.71% da média da coluna alvo); sem outliers=0.7744 (21.19% da média da coluna alvo); diferença=-0.2984 (-6.52
+                    p.p. da média da coluna alvo)
+  MAE médio com outliers=0.7333 (18.94% da média da coluna alvo); sem outliers=0.6005 (16.43% da média da coluna alvo); diferença=-0.1329 (-2.51
+                    p.p. da média da coluna alvo)
+Árvore de decisão:
+  R² médio com outliers=0.7837; sem outliers=0.7416; diferença=-0.0421
+  RMSE médio com outliers=0.8821 (22.79% da média da coluna alvo); sem outliers=0.7299 (19.97% da média da coluna alvo); diferença=-0.1522 (-2.81
+                    p.p. da média da coluna alvo)
+  MAE médio com outliers=0.6336 (16.37% da média da coluna alvo); sem outliers=0.5576 (15.26% da média da coluna alvo); diferença=-0.0760 (-1.11
+                    p.p. da média da coluna alvo)
+Floresta aleatória:
+  R² médio com outliers=0.8090; sem outliers=0.7618; diferença=-0.0472
+  RMSE médio com outliers=0.8290 (21.42% da média da coluna alvo); sem outliers=0.7009 (19.18% da média da coluna alvo); diferença=-0.1282 (-2.24
+                    p.p. da média da coluna alvo)
+  MAE médio com outliers=0.5850 (15.11% da média da coluna alvo); sem outliers=0.5307 (14.52% da média da coluna alvo); diferença=-0.0543 (-0.59
+                    p.p. da média da coluna alvo)
+
+=== Sensibilidade dos hiperparâmetros a outliers ===
+Legenda: com outliers → sem outliers; = igual; ≠ diferente
+Árvore de decisão:
+  max_depth: 5 → 5 =
+  min_samples_leaf: 4 → 1 ≠
+  min_samples_split: 2 → 2 =
+Floresta aleatória:
+  max_depth: 10 → 10 =
+  max_features: sqrt → sqrt =
+  n_estimators: 400 → 400 =
+
+Resultados salvos em /home/vky/Projects/school/ICD/ep3/output/resultados.json
